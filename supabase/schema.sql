@@ -91,7 +91,7 @@ create policy "Usuários autenticados podem deletar leads"
 create table public.projects (
   id uuid default gen_random_uuid() primary key,
   lead_id uuid references public.leads(id) on delete set null,
-  status_projeto text default 'Orçamento' not null check (status_projeto in ('Orçamento', 'Instalação', 'Concluído')),
+  status_projeto text default 'Orçamento' not null check (status_projeto in ('Orçamento', 'Preparação', 'Instalação', 'Teste de Carga', 'Concluído')),
   endereco text not null,
   valor_total numeric(12,2) default 0.00 not null,
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null

@@ -19,7 +19,7 @@ export interface Lead {
 export interface Project {
   id: string;
   lead_id: string | null;
-  status_projeto: 'Orçamento' | 'Instalação' | 'Concluído';
+  status_projeto: 'Orçamento' | 'Preparação' | 'Instalação' | 'Teste de Carga' | 'Concluído';
   endereco: string;
   valor_total: number;
   criado_em: string;
