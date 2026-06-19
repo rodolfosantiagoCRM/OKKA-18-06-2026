@@ -18,7 +18,7 @@ export default function LandingPage() {
           </div>
           <nav className="hidden md:flex space-x-8 text-sm font-medium text-slate-400">
             <a href="#tecnologia" className="hover:text-orange-400 transition-colors">Tecnologia</a>
-            <a href="/visitas" className="text-orange-400 hover:text-orange-350 transition-colors font-semibold">Acessar CRM ➔</a>
+            <a href="/login" className="text-orange-400 hover:text-orange-350 transition-colors font-semibold">Acessar CRM ➔</a>
           </nav>
           <a
             href="#orcamento"

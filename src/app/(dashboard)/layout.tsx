@@ -15,6 +15,17 @@ export default function DashboardLayout({
   const [userName, setUserName] = useState<string>('Usuário OKKA');
   const [userRoleLabel, setUserRoleLabel] = useState<string>('Painel Operacional');
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax; Secure';
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+      window.location.href = '/';
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -205,7 +216,15 @@ export default function DashboardLayout({
                 <p className="text-xs font-bold text-gray-900 truncate">{userName}</p>
                 <p className="text-[10px] text-gray-400 font-medium truncate">{userRoleLabel}</p>
               </div>
-              <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+              <button
+                onClick={handleSignOut}
+                title="Sair do Sistema"
+                className="shrink-0 p-1.5 text-gray-400 hover:text-orange-500 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
           </div>
         </aside>
