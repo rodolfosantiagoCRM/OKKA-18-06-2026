@@ -5,6 +5,7 @@ import { useVisitas } from '@/hooks/useVisitas';
 import AgendaHeader from '@/components/crm/agenda-header';
 import AgendaTimeline from '@/components/crm/agenda-timeline';
 import ModalPreenchimentoVisita from '@/components/crm/modal-preenchimento-visita';
+import ModalAgendamentoVisita from '@/components/crm/modal-agendamento-visita';
 import { Visita } from '@/types/database.types';
 
 // Dados simulados de fallback (para exibição caso o banco não esteja preenchido)
@@ -128,9 +129,22 @@ const MOCK_FALLBACK_VISITAS: Visita[] = [
 ];
 
 export default function DashboardVisitas() {
-  const { visitas: dbVisitas, isLoading, updateVisita, isUpdating } = useVisitas();
+  const {
+    visitas: dbVisitas,
+    isLoading,
+    updateVisita,
+    isUpdating,
+    createVisita,
+    isCreating,
+  } = useVisitas();
+
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
+
+  // Estados dos filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todas');
 
   // Fallback local caso o banco esteja vazio
   const [localVisitasFallback, setLocalVisitasFallback] = useState<Visita[]>(MOCK_FALLBACK_VISITAS);
@@ -161,14 +175,87 @@ export default function DashboardVisitas() {
     }
   };
 
-  // Cálculos de KPIs baseados na lista atual
+  const handleScheduleVisita = async (novaVisita: {
+    project_id: string;
+    data_visita: string;
+    horario: string;
+    status_visita: 'Agendada';
+    observacoes: string;
+    cliente?: string;
+    endereco?: string;
+  }) => {
+    if (isDbConfigured) {
+      await createVisita(novaVisita);
+    } else {
+      // Cria registro mockado
+      const newId = `v${localVisitasFallback.length + 1}`;
+      const newRecord: Visita = {
+        id: newId,
+        project_id: novaVisita.project_id,
+        data_visita: novaVisita.data_visita,
+        horario: novaVisita.horario,
+        status_visita: novaVisita.status_visita,
+        material_usado: [],
+        valor_gasto: 0,
+        observacoes: novaVisita.observacoes,
+        criado_em: new Date().toISOString(),
+        cliente: novaVisita.cliente,
+        endereco: novaVisita.endereco,
+        projects: {
+          id: novaVisita.project_id,
+          lead_id: 'l-mock',
+          status_projeto: 'Instalação',
+          endereco: novaVisita.endereco || '',
+          valor_total: 10000,
+          criado_em: new Date().toISOString(),
+          leads: {
+            id: 'l-mock',
+            nome: novaVisita.cliente || 'Cliente Mock',
+            email: '',
+            telefone: '',
+            cidade: 'Curitiba',
+            area_m2: 50,
+            status: 'Qualificado',
+            criado_em: new Date().toISOString()
+          }
+        }
+      };
+      setLocalVisitasFallback((prev) => [...prev, newRecord]);
+    }
+  };
+
+  // Filtragem dinâmica
+  const filteredVisitas = listVisitas.filter((v) => {
+    // Filtro por Status
+    if (statusFilter !== 'Todas' && v.status_visita !== statusFilter) {
+      return false;
+    }
+    // Filtro por termo de busca (cliente, endereço ou observações)
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      const nomeCliente = (v.projects?.leads?.nome || v.cliente || '').toLowerCase();
+      const endereco = (v.projects?.endereco || v.endereco || '').toLowerCase();
+      const observacoes = (v.observacoes || '').toLowerCase();
+      return (
+        nomeCliente.includes(term) ||
+        endereco.includes(term) ||
+        observacoes.includes(term)
+      );
+    }
+    return true;
+  });
+
+  // Cálculos de KPIs baseados na lista total (completa)
   const hojeStr = '2026-06-18';
   const visitasHoje = listVisitas.filter((v) => v.data_visita === hojeStr);
   const totalHoje = visitasHoje.filter((v) => v.status_visita === 'Agendada').length;
-  const materiaisPendentesCount = listVisitas.filter((v) => !v.material_usado || v.material_usado.length === 0).length;
-  
+  const materiaisPendentesCount = listVisitas.filter(
+    (v) => !v.material_usado || v.material_usado.length === 0
+  ).length;
+
   const visitasExecutadas = listVisitas.filter((v) => v.status_visita !== 'Agendada').length;
-  const taxaConclusao = listVisitas.length > 0 ? Math.round((visitasExecutadas / listVisitas.length) * 100) : 0;
+  const taxaConclusao =
+    listVisitas.length > 0 ? Math.round((visitasExecutadas / listVisitas.length) * 100) : 0;
 
   if (isLoading && isDbConfigured) {
     return (
@@ -187,19 +274,37 @@ export default function DashboardVisitas() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-10">
-        
         {/* Componente KPIs e Cabeçalho */}
         <AgendaHeader
           totalHoje={totalHoje}
           materiaisPendentesCount={materiaisPendentesCount}
           taxaConclusao={taxaConclusao}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          onAgendarClick={() => setIsAgendarModalOpen(true)}
         />
 
-        {/* Componente Timeline por Dias */}
-        <AgendaTimeline
-          visitas={listVisitas}
-          onOpenModal={handleOpenModal}
-        />
+        {/* Componente Timeline por Dias (com dados filtrados) */}
+        {filteredVisitas.length === 0 ? (
+          <div className="bg-slate-900/40 border border-slate-850 rounded-2xl p-12 text-center">
+            <svg className="w-10 h-10 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p className="text-slate-450 text-sm font-medium">Nenhuma visita atende aos filtros aplicados.</p>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="mt-3 text-xs text-orange-450 hover:underline font-bold"
+              >
+                Limpar busca
+              </button>
+            )}
+          </div>
+        ) : (
+          <AgendaTimeline visitas={filteredVisitas} onOpenModal={handleOpenModal} />
+        )}
 
         {/* Componente Modal de Preenchimento Técnico */}
         <ModalPreenchimentoVisita
@@ -208,6 +313,14 @@ export default function DashboardVisitas() {
           onClose={handleCloseModal}
           onSave={handleSaveReport}
           isSaving={isUpdating}
+        />
+
+        {/* Componente Modal de Agendamento */}
+        <ModalAgendamentoVisita
+          isOpen={isAgendarModalOpen}
+          onClose={() => setIsAgendarModalOpen(false)}
+          onSave={handleScheduleVisita}
+          isSaving={isCreating}
         />
       </div>
     </div>

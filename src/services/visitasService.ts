@@ -42,4 +42,36 @@ export const visitasService = {
     }
     return data as Visita;
   },
+
+  /**
+   * Cria uma nova visita técnica agendada para um projeto
+   */
+  async createVisita(visita: {
+    project_id: string;
+    data_visita: string;
+    horario: string;
+    status_visita?: 'Agendada' | 'Realizada' | 'Cancelada';
+    observacoes?: string;
+  }): Promise<Visita> {
+    const { data, error } = await supabase
+      .from('visits')
+      .insert([
+        {
+          project_id: visita.project_id,
+          data_visita: visita.data_visita,
+          horario: visita.horario,
+          status_visita: visita.status_visita || 'Agendada',
+          material_usado: [],
+          valor_gasto: 0,
+          observacoes: visita.observacoes || '',
+        },
+      ])
+      .select('*, projects(*, leads(*))')
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao criar visita técnica.');
+    }
+    return data as unknown as Visita;
+  },
 };

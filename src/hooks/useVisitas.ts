@@ -21,11 +21,22 @@ export function useVisitas() {
     },
   });
 
+  // Mutação para agendamento de uma nova visita
+  const createVisitaMutation = useMutation({
+    mutationFn: visitasService.createVisita,
+    onSuccess: () => {
+      // Força a revalidação imediata do cronograma de visitas
+      queryClient.invalidateQueries({ queryKey: ['visitas'] });
+    },
+  });
+
   return {
     visitas: visitasQuery.data || [],
     isLoading: visitasQuery.isLoading,
     error: visitasQuery.error,
     updateVisita: updateVisitaMutation.mutateAsync,
     isUpdating: updateVisitaMutation.isPending,
+    createVisita: createVisitaMutation.mutateAsync,
+    isCreating: createVisitaMutation.isPending,
   };
 }
