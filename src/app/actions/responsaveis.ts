@@ -26,9 +26,9 @@ export async function createResponsavelTecnico(
       throw new Error('Não autorizado: Sessão inválida ou expirada.');
     }
 
-    // Verificar se a role é 'admin' na tabela profiles
+    // Verificar se a role é 'admin' na tabela perfis_usuarios
     const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
+      .from('perfis_usuarios')
       .select('role')
       .eq('id', user.id)
       .single();
@@ -107,7 +107,7 @@ export async function deleteResponsavelTecnico(id: string, token?: string): Prom
     }
 
     const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
+      .from('perfis_usuarios')
       .select('role')
       .eq('id', user.id)
       .single();

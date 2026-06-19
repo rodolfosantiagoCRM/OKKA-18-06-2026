@@ -51,3 +51,12 @@ export interface ResponsavelTecnico {
   created_at: string;
 }
 
+export interface PerfilUsuario {
+  id: string;
+  nome_completo: string;
+  email: string;
+  role: 'admin' | 'instalador' | 'tecnico';
+  status_acesso: boolean;
+  created_at: string;
+}
+

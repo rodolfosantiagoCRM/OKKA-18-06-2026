@@ -97,9 +97,11 @@ export default function DashboardHome() {
   ).length;
   const faturamento = projects.reduce((acc, p) => acc + p.valor_total, 0);
   const visitasHoje = visitas.filter((v) => v.data_visita === hojeStr && v.status_visita === 'Agendada').length;
-  const taxaConclusao = visitas.length > 0
-    ? Math.round((visitas.filter((v) => v.status_visita === 'Realizada').length / visitas.length) * 100)
-    : 0;
+  const materiaisPendentesCount = visitas.filter(
+    (v) => !v.material_usado || v.material_usado.length === 0
+  ).length;
+  const visitasExecutadas = visitas.filter((v) => v.status_visita !== 'Agendada').length;
+  const taxaConclusao = visitas.length > 0 ? Math.round((visitasExecutadas / visitas.length) * 100) : 0;
 
   const proximasVisitas = [...visitas]
     .sort((a, b) => `${a.data_visita}${a.horario}`.localeCompare(`${b.data_visita}${b.horario}`))
@@ -129,7 +131,7 @@ export default function DashboardHome() {
         </div>
 
         {/* ── KPI Grid ───────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <KpiCard
             label="Total de Leads"
             value={totalLeads}
@@ -173,6 +175,31 @@ export default function DashboardHome() {
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+          />
+          <KpiCard
+            label="Materiais Pendentes"
+            value={materiaisPendentesCount}
+            iconBg="bg-rose-50 text-rose-500"
+            badge={materiaisPendentesCount > 0 ? (
+              <span className="text-[9px] font-bold bg-rose-100 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full">
+                relatórios
+              </span>
+            ) : undefined}
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            }
+          />
+          <KpiCard
+            label="Taxa de Eficiência"
+            value={`${taxaConclusao}%`}
+            iconBg="bg-teal-50 text-teal-500"
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             }
           />

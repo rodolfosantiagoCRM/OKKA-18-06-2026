@@ -11,7 +11,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [role, setRole] = useState<'admin' | 'tecnico' | null>(null);
+  const [role, setRole] = useState<'admin' | 'tecnico' | 'instalador' | null>(null);
+  const [userName, setUserName] = useState<string>('Usuário OKKA');
+  const [userRoleLabel, setUserRoleLabel] = useState<string>('Painel Operacional');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -25,17 +27,37 @@ export default function DashboardLayout({
     async function checkRole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const userRole = session.user.user_metadata?.role;
-        if (userRole) {
-          setRole(userRole as 'admin' | 'tecnico');
+        const metadataRole = session.user.user_metadata?.role;
+        const metadataName = session.user.user_metadata?.name || session.user.user_metadata?.nome_completo;
+        if (metadataName) setUserName(metadataName);
+        
+        if (metadataRole) {
+          setRole(metadataRole as 'admin' | 'tecnico' | 'instalador');
+          setUserRoleLabel(
+            metadataRole === 'admin'
+              ? 'Conta Mestra'
+              : metadataRole === 'instalador'
+              ? 'Instalador Técnico'
+              : 'Técnico Operacional'
+          );
         } else {
           const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
+            .from('perfis_usuarios')
+            .select('role, nome_completo')
             .eq('id', session.user.id)
             .single();
-          if (profile?.role) {
-            setRole(profile.role as 'admin' | 'tecnico');
+          if (profile) {
+            if (profile.role) {
+              setRole(profile.role as 'admin' | 'tecnico' | 'instalador');
+              setUserRoleLabel(
+                profile.role === 'admin'
+                  ? 'Conta Mestra'
+                  : profile.role === 'instalador'
+                  ? 'Instalador Técnico'
+                  : 'Técnico Operacional'
+              );
+            }
+            if (profile.nome_completo) setUserName(profile.nome_completo);
           }
         }
       }
@@ -118,6 +140,15 @@ export default function DashboardLayout({
               </svg>
             ),
           },
+          {
+            href: '/dashboard/usuarios',
+            label: 'Gestão de Usuários',
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            ),
+          },
         ]
       : []),
   ];
@@ -168,13 +199,13 @@ export default function DashboardLayout({
           <div className="p-5 border-t border-gray-100">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center font-black text-sm text-white shadow-sm shadow-orange-500/20">
-                T
+                {userName.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-900">Técnico OKKA</p>
-                <p className="text-[10px] text-gray-400 font-medium">Painel Operacional</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-900 truncate">{userName}</p>
+                <p className="text-[10px] text-gray-400 font-medium truncate">{userRoleLabel}</p>
               </div>
-              <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+              <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
             </div>
           </div>
         </aside>

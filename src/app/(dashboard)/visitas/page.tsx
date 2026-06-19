@@ -376,11 +376,7 @@ export default function DashboardVisitas() {
     <div className="min-h-screen bg-gray-50 text-gray-900 p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-7">
         
-        {/* Header e KPIs */}
         <AgendaHeader
-          totalHoje={totalHoje}
-          materiaisPendentesCount={materiaisPendentesCount}
-          taxaConclusao={taxaConclusao}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}

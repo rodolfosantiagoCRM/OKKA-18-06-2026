@@ -19,29 +19,59 @@ export async function proxy(request: NextRequest) {
 
   try {
     // 2. Obter informações do usuário de forma segura através do Supabase
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Passando o token nos headers globais para herdar políticas RLS do usuário autenticado
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
 
-    if (error || !user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
       // Token inválido ou expirado
-      return NextResponse.redirect(new URL('/', request.url));
+      const response = NextResponse.redirect(new URL('/', request.url));
+      response.cookies.delete('sb-access-token');
+      return response;
     }
 
-    // 3. Obter a role do usuário a partir dos metadados inseridos no registro
-    const role = user.user_metadata?.role || 'tecnico';
+    // 3. Buscar perfil atualizado na tabela perfis_usuarios
+    const { data: perfil, error: dbError } = await supabase
+      .from('perfis_usuarios')
+      .select('role, status_acesso')
+      .eq('id', user.id)
+      .single();
 
-    // 4. Se for Técnico, restringe o acesso apenas à rota de Visitas Técnicas
-    if (role === 'tecnico') {
+    // Validar status de acesso
+    const status_acesso = perfil ? perfil.status_acesso : (user.user_metadata?.status_acesso ?? true);
+
+    if (status_acesso === false) {
+      // Usuário bloqueado - apagar cookie e redirecionar
+      const response = NextResponse.redirect(new URL('/acesso-revogado', request.url));
+      response.cookies.delete('sb-access-token');
+      return response;
+    }
+
+    // Determinar a role do usuário
+    const role = perfil?.role || user.user_metadata?.role || 'instalador';
+
+    // 4. Se for Técnico ou Instalador, restringe o acesso apenas à rota de Visitas Técnicas
+    if (role === 'tecnico' || role === 'instalador') {
       const isAllowedRoute = pathname.startsWith('/visitas') || pathname === '/dashboard/visitas-tecnicas';
       
       if (!isAllowedRoute) {
-        // Redireciona o Técnico para a rota de Visitas
-        return NextResponse.redirect(new URL('/visitas', request.url));
+        // Redireciona o Instalador/Técnico de volta para a aba de visitas
+        const targetUrl = pathname.startsWith('/dashboard') ? '/dashboard/visitas-tecnicas' : '/visitas';
+        return NextResponse.redirect(new URL(targetUrl, request.url));
       }
     }
   } catch (err) {
     console.error('Erro no proxy de autenticação:', err);
-    return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/', request.url));
+    response.cookies.delete('sb-access-token');
+    return response;
   }
 
   return NextResponse.next();
