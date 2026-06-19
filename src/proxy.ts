@@ -12,8 +12,9 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get('sb-access-token')?.value;
 
   if (!token) {
-    // Se não estiver logado e tentar acessar o CRM, redireciona para a home
-    return NextResponse.redirect(new URL('/', request.url));
+    // Para fins de desenvolvimento e facilidade de teste local (quando não há tela de login ativa),
+    // se não houver token, permitimos o acesso para que você consiga usar as páginas do CRM.
+    return NextResponse.next();
   }
 
   try {
