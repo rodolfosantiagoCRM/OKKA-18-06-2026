@@ -62,9 +62,19 @@ export async function proxy(request: NextRequest) {
 
     // Mapear role para compatibilidade com novos e antigos termos
     const normalizedRole = (role || 'instalador').toLowerCase();
+
+    // 3.5. Proteção rígida da rota /superadmin
+    if (pathname.startsWith('/superadmin')) {
+      if (normalizedRole !== 'super_admin') {
+        console.warn(`[Proxy] Acesso negado a /superadmin para o usuário ${user.email} (Role: ${normalizedRole})`);
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+      return NextResponse.next();
+    }
+
     let mappedRole: 'mestre' | 'vendedor' | 'instalador' = 'instalador';
 
-    if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
+    if (normalizedRole === 'mestre' || normalizedRole === 'admin' || normalizedRole === 'super_admin') {
       mappedRole = 'mestre';
     } else if (normalizedRole === 'vendedor' || normalizedRole === 'tecnico') {
       mappedRole = 'vendedor';
@@ -103,9 +113,11 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Configura o interceptador do Next.js 16 para as rotas protegidas do dashboard
+// Configura o interceptador do Next.js 16 para as rotas protegidas do dashboard e do superadmin
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/superadmin/:path*',
+    '/superadmin',
   ],
 };

@@ -102,7 +102,7 @@ export default function ResponsaveisTecnicosPage() {
 
   // Feedbacks
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [newCredentials, setNewCredentials] = useState<{ email: string; senha: string; nome: string; isEdit?: boolean } | null>(null);
+  const [newCredentials, setNewCredentials] = useState<{ email: string; senha: string; nome: string; telefone?: string; isEdit?: boolean } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Controle de Permissões de Abas
@@ -330,6 +330,7 @@ export default function ResponsaveisTecnicosPage() {
         nome: nome.trim(),
         email: email.trim(),
         senha: senhaFinal,
+        telefone: telefone.trim(),
       });
 
       showToast('success', 'Colaborador e credenciais cadastrados com sucesso!');
@@ -405,6 +406,7 @@ export default function ResponsaveisTecnicosPage() {
           nome: editNome.trim(),
           email: editEmail.trim(),
           senha: editSenha.trim(),
+          telefone: editTelefone.trim(),
           isEdit: true,
         });
       }
@@ -486,7 +488,7 @@ export default function ResponsaveisTecnicosPage() {
   const handleCopyCredentials = (user: Colaborador) => {
     const loginLink = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://okka.com.br/login';
     const roleName = user.role.toUpperCase();
-    const text = `Acesso OKKA CRM (${roleName}):\nOlá ${user.nome_completo},\nSeu acesso foi configurado!\nLink: ${loginLink}\nE-mail: ${user.email}\nSenha: (Utilize a senha padrão OkkaTeam2026! ou a nova senha que foi redefinida)`;
+    const text = `Acesso OKKA CRM (${roleName}):\nOlá ${user.nome_completo},\nSeu acesso foi configurado!\nLink: ${loginLink}\nE-mail: ${user.email}\nSenha: OkkaTeam2026!`;
     
     navigator.clipboard.writeText(text);
     setCopiedId(user.id);
@@ -501,6 +503,46 @@ export default function ResponsaveisTecnicosPage() {
     
     navigator.clipboard.writeText(text);
     showToast('success', 'Credenciais copiadas para a área de transferência!');
+  };
+
+  // Enviar pelo WhatsApp do modal de credenciais recém criadas
+  const handleWhatsAppNewCredentials = () => {
+    if (!newCredentials) return;
+    const loginLink = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://okka.com.br/login';
+    const text = `Acesso OKKA CRM:\nOlá ${newCredentials.nome},\nSeu acesso foi configurado!\nLink: ${loginLink}\nE-mail: ${newCredentials.email}\nSenha: ${newCredentials.senha}`;
+
+    const phone = newCredentials.telefone || '';
+    if (!phone) {
+      showToast('error', 'Telefone do colaborador não cadastrado.');
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 || cleanPhone.length === 11 
+      ? `55${cleanPhone}` 
+      : cleanPhone;
+
+    const url = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  // Enviar Credenciais Individuais via WhatsApp
+  const handleSendWhatsAppCredentials = (user: Colaborador) => {
+    if (!user.telefone) {
+      showToast('error', 'Telefone do colaborador não cadastrado.');
+      return;
+    }
+    const loginLink = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://okka.com.br/login';
+    const roleName = user.role.toUpperCase();
+    const text = `Acesso OKKA CRM (${roleName}):\nOlá ${user.nome_completo},\nSeu acesso foi configurado!\nLink: ${loginLink}\nE-mail: ${user.email}\nSenha: OkkaTeam2026!`;
+
+    const cleanPhone = user.telefone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 || cleanPhone.length === 11 
+      ? `55${cleanPhone}` 
+      : cleanPhone;
+
+    const url = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   // Filtragem
@@ -952,6 +994,19 @@ export default function ResponsaveisTecnicosPage() {
                                   )}
                                 </button>
 
+                                {/* Botão WhatsApp */}
+                                {colab.telefone && (
+                                  <button
+                                    onClick={() => handleSendWhatsAppCredentials(colab)}
+                                    title="Enviar Credenciais via WhatsApp"
+                                    className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer inline-flex items-center justify-center"
+                                  >
+                                    <svg className="w-4 h-4 text-emerald-600 hover:text-emerald-700" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M12.004 2c-5.518 0-9.996 4.478-9.996 9.996 0 1.764.46 3.426 1.265 4.887l-1.272 4.654 4.761-1.248c1.411.769 3.012 1.207 4.71 1.207 5.517 0 9.996-4.478 9.996-9.996S17.52 2 12.004 2zm5.008 14.337c-.205.577-1.011 1.103-1.602 1.173-.4.048-.922.072-1.485-.11-3.567-1.157-5.908-4.757-6.086-4.992-.178-.235-1.442-1.92-1.442-3.66 0-1.739.905-2.595 1.226-2.946.321-.351.7-.439.932-.439.234 0 .468.002.671.012.208.01.49-.078.766.592.28.681.959 2.333 1.042 2.499.083.165.138.358.028.577-.11.22-.165.358-.33.55-.165.193-.346.43-.495.577-.165.165-.337.345-.145.676.193.33.856 1.411 1.834 2.285.836.745 1.542.977 1.872 1.143.33.165.522.138.718-.087.195-.226.837-.977 1.06-1.312.22-.335.439-.28.742-.165.303.116 1.925.909 2.256 1.074.33.165.55.247.629.385.08.138.08.799-.125 1.376z"/>
+                                    </svg>
+                                  </button>
+                                )}
+
                                 {/* Botão Excluir */}
                                 <button
                                   onClick={() => handleDelete(colab.id, colab.nome_completo)}
@@ -1154,6 +1209,17 @@ export default function ResponsaveisTecnicosPage() {
               >
                 Fechar
               </button>
+              {newCredentials.telefone && (
+                <button
+                  onClick={handleWhatsAppNewCredentials}
+                  className="px-4.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-emerald-500/10 cursor-pointer flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.004 2c-5.518 0-9.996 4.478-9.996 9.996 0 1.764.46 3.426 1.265 4.887l-1.272 4.654 4.761-1.248c1.411.769 3.012 1.207 4.71 1.207 5.517 0 9.996-4.478 9.996-9.996S17.52 2 12.004 2zm5.008 14.337c-.205.577-1.011 1.103-1.602 1.173-.4.048-.922.072-1.485-.11-3.567-1.157-5.908-4.757-6.086-4.992-.178-.235-1.442-1.92-1.442-3.66 0-1.739.905-2.595 1.226-2.946.321-.351.7-.439.932-.439.234 0 .468.002.671.012.208.01.49-.078.766.592.28.681.959 2.333 1.042 2.499.083.165.138.358.028.577-.11.22-.165.358-.33.55-.165.193-.346.43-.495.577-.165.165-.337.345-.145.676.193.33.856 1.411 1.834 2.285.836.745 1.542.977 1.872 1.143.33.165.522.138.718-.087.195-.226.837-.977 1.06-1.312.22-.335.439-.28.742-.165.303.116 1.925.909 2.256 1.074.33.165.55.247.629.385.08.138.08.799-.125 1.376z"/>
+                  </svg>
+                  Enviar via WhatsApp
+                </button>
+              )}
               <button
                 onClick={handleCopyNewCredentials}
                 className="px-4.5 py-2 bg-[#E25B3C] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"

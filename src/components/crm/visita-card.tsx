@@ -27,6 +27,32 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
      visita.tecnico_id === 't2' ? 'Fernanda Lima Souza' :
      visita.tecnico_id === 't3' ? 'Rodrigo Medeiros' : null);
 
+  const tecnicoTelefone =
+    visita.responsaveis_tecnicos?.telefone ||
+    (visita.tecnico_id === 't1' ? '(41) 98888-1234' :
+     visita.tecnico_id === 't2' ? '(41) 97777-5678' :
+     visita.tecnico_id === 't3' ? '(41) 99999-1111' : null);
+
+  const handleWhatsAppAlert = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita abrir o modal de preenchimento
+    if (!tecnicoTelefone) {
+      alert('Telefone do instalador não cadastrado.');
+      return;
+    }
+
+    const cleanPhone = tecnicoTelefone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 || cleanPhone.length === 11 
+      ? `55${cleanPhone}` 
+      : cleanPhone;
+
+    const dataFormatada = visita.data_visita.split('-').reverse().join('/');
+    const horario = visita.horario.substring(0, 5);
+    const text = `Olá *${tecnicoNome}*,\n\nPassando para lembrar do seu agendamento de visita técnica:\n\n*Cliente:* ${clienteNome}\n*Data:* ${dataFormatada}\n*Horário:* ${horario} hs\n*Endereço:* ${endereco}\n${visita.observacoes ? `*Observações:* ${visita.observacoes}\n` : ''}\nBom trabalho!`;
+
+    const url = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   const isAtrasado = checkIsAtrasado(visita.data_visita, visita.horario, visita.status_visita);
 
   const handleMapClick = (e: React.MouseEvent) => e.stopPropagation();
@@ -119,6 +145,17 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
       {/* Lado Direito */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t border-gray-100 md:border-t-0 pt-3 md:pt-0">
         {statusBadge}
+        {tecnicoNome && tecnicoTelefone && (
+          <button
+            onClick={handleWhatsAppAlert}
+            title="Alertar Instalador via WhatsApp"
+            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 text-emerald-600 hover:text-emerald-700 transition-all cursor-pointer shrink-0 inline-flex items-center justify-center"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12.004 2c-5.518 0-9.996 4.478-9.996 9.996 0 1.764.46 3.426 1.265 4.887l-1.272 4.654 4.761-1.248c1.411.769 3.012 1.207 4.71 1.207 5.517 0 9.996-4.478 9.996-9.996S17.52 2 12.004 2zm5.008 14.337c-.205.577-1.011 1.103-1.602 1.173-.4.048-.922.072-1.485-.11-3.567-1.157-5.908-4.757-6.086-4.992-.178-.235-1.442-1.92-1.442-3.66 0-1.739.905-2.595 1.226-2.946.321-.351.7-.439.932-.439.234 0 .468.002.671.012.208.01.49-.078.766.592.28.681.959 2.333 1.042 2.499.083.165.138.358.028.577-.11.22-.165.358-.33.55-.165.193-.346.43-.495.577-.165.165-.337.345-.145.676.193.33.856 1.411 1.834 2.285.836.745 1.542.977 1.872 1.143.33.165.522.138.718-.087.195-.226.837-.977 1.06-1.312.22-.335.439-.28.742-.165.303.116 1.925.909 2.256 1.074.33.165.55.247.629.385.08.138.08.799-.125 1.376z"/>
+            </svg>
+          </button>
+        )}
         {onDelete && (
           <button
             onClick={(e) => {
