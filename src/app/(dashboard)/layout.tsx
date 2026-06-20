@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [role, setRole] = useState<'admin' | 'tecnico' | 'instalador' | null>(null);
+  const [role, setRole] = useState<'admin' | 'tecnico' | 'instalador' | 'mestre' | 'vendedor' | null>(null);
   const [userName, setUserName] = useState<string>('Usuário OKKA');
   const [userRoleLabel, setUserRoleLabel] = useState<string>('Painel Operacional');
 
@@ -43,32 +43,53 @@ export default function DashboardLayout({
         if (metadataName) setUserName(metadataName);
         
         if (metadataRole) {
-          setRole(metadataRole as 'admin' | 'tecnico' | 'instalador');
+          setRole(metadataRole as any);
           setUserRoleLabel(
-            metadataRole === 'admin'
+            metadataRole === 'admin' || metadataRole === 'mestre'
               ? 'Conta Mestra'
+              : metadataRole === 'vendedor'
+              ? 'Vendedor'
               : metadataRole === 'instalador'
               ? 'Instalador Técnico'
               : 'Técnico Operacional'
           );
         } else {
-          const { data: profile } = await supabase
-            .from('perfis_usuarios')
+          // Consultar a tabela 'perfis'
+          let userRole = '';
+          const { data: perfil } = await supabase
+            .from('perfis')
             .select('role, nome_completo')
             .eq('id', session.user.id)
             .single();
-          if (profile) {
-            if (profile.role) {
-              setRole(profile.role as 'admin' | 'tecnico' | 'instalador');
-              setUserRoleLabel(
-                profile.role === 'admin'
-                  ? 'Conta Mestra'
-                  : profile.role === 'instalador'
-                  ? 'Instalador Técnico'
-                  : 'Técnico Operacional'
-              );
+
+          if (perfil) {
+            userRole = perfil.role;
+            if (perfil.nome_completo) setUserName(perfil.nome_completo);
+          } else {
+            // Fallback para 'perfis_usuarios'
+            const { data: perfilUsuario } = await supabase
+              .from('perfis_usuarios')
+              .select('role, nome_completo')
+              .eq('id', session.user.id)
+              .single();
+
+            if (perfilUsuario) {
+              userRole = perfilUsuario.role;
+              if (perfilUsuario.nome_completo) setUserName(perfilUsuario.nome_completo);
             }
-            if (profile.nome_completo) setUserName(profile.nome_completo);
+          }
+
+          if (userRole) {
+            setRole(userRole as any);
+            setUserRoleLabel(
+              userRole === 'admin' || userRole === 'mestre'
+                ? 'Conta Mestra'
+                : userRole === 'vendedor'
+                ? 'Vendedor'
+                : userRole === 'instalador'
+                ? 'Instalador Técnico'
+                : 'Técnico Operacional'
+            );
           }
         }
       }
@@ -93,6 +114,7 @@ export default function DashboardLayout({
   );
 
   const userRole = role || 'admin';
+  const isManager = userRole === 'admin' || userRole === 'mestre';
 
   const navItems = [
     {
@@ -113,7 +135,7 @@ export default function DashboardLayout({
         </svg>
       ),
     },
-    ...(userRole === 'admin'
+    ...(isManager
       ? [
           {
             href: '/leads',
