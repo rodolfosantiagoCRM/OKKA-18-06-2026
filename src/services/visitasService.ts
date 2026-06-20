@@ -79,4 +79,18 @@ export const visitasService = {
     }
     return data as unknown as Visita;
   },
+
+  /**
+   * Exclui uma visita técnica pelo ID
+   */
+  async deleteVisita(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('visits')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao excluir visita técnica.');
+    }
+  },
 };

@@ -10,6 +10,8 @@ export function useVisitas() {
   const visitasQuery = useQuery({
     queryKey: ['visitas'],
     queryFn: getGroupedVisitas,
+    refetchInterval: 30000, // Atualiza automaticamente a cada 30 segundos
+    refetchOnWindowFocus: true, // Recarrega ao voltar o foco para o app
   });
 
   // Mutação para preenchimento de relatório da visita pelo técnico
@@ -31,6 +33,15 @@ export function useVisitas() {
     },
   });
 
+  // Mutação para exclusão de uma visita técnica
+  const deleteVisitaMutation = useMutation({
+    mutationFn: (id: string) => visitasService.deleteVisita(id),
+    onSuccess: () => {
+      // Força a revalidação imediata do cronograma de visitas
+      queryClient.invalidateQueries({ queryKey: ['visitas'] });
+    },
+  });
+
   return {
     visitas: visitasQuery.data?.rawVisitas || [],
     hojeStr: visitasQuery.data?.hojeStr || '',
@@ -45,5 +56,7 @@ export function useVisitas() {
     isUpdating: updateVisitaMutation.isPending,
     createVisita: createVisitaMutation.mutateAsync,
     isCreating: createVisitaMutation.isPending,
+    deleteVisita: deleteVisitaMutation.mutateAsync,
+    isDeleting: deleteVisitaMutation.isPending,
   };
 }

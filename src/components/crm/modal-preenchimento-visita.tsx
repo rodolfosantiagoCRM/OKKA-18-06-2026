@@ -8,6 +8,7 @@ interface ModalPreenchimentoVisitaProps {
   onClose: () => void;
   onSave: (id: string, updates: Partial<Visita>) => Promise<void>;
   isSaving: boolean;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 function formatDisplayDate(val: string) {
@@ -22,6 +23,7 @@ export default function ModalPreenchimentoVisita({
   onClose,
   onSave,
   isSaving,
+  onDelete,
 }: ModalPreenchimentoVisitaProps) {
   const { responsaveis: dbResponsaveis } = useResponsaveis();
   const [localVisita, setLocalVisita] = useState<Visita | null>(null);
@@ -304,37 +306,58 @@ export default function ModalPreenchimentoVisita({
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-800 rounded-xl font-semibold text-sm transition-all cursor-pointer"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl font-black text-sm transition-all shadow-md shadow-orange-500/20 cursor-pointer flex items-center gap-2"
-          >
-            {isSaving ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+          <div>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm('Deseja realmente excluir esta visita técnica? Esta ação é irreversível.')) {
+                    await onDelete(localVisita.id);
+                    onClose();
+                  }
+                }}
+                className="px-4 py-2.5 bg-white hover:bg-rose-50 border border-rose-200 hover:border-rose-300 text-rose-600 hover:text-rose-700 rounded-xl font-semibold text-sm transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Salvando...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-                Salvar Relatório
-              </>
+                Excluir Visita
+              </button>
             )}
-          </button>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-800 rounded-xl font-semibold text-sm transition-all cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl font-black text-sm transition-all shadow-md shadow-orange-500/20 cursor-pointer flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Salvar Relatório
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

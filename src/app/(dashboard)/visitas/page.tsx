@@ -158,6 +158,17 @@ const MOCK_FALLBACK_VISITAS: Visita[] = [
   }
 ];
 
+function getFormattedHeaderDate(dateStr: string) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const monthName = months[parseInt(month, 10) - 1];
+  return `${parseInt(day, 10)} ${monthName}`;
+}
+
 export default function DashboardVisitas() {
   const {
     visitas: dbVisitas,
@@ -172,6 +183,7 @@ export default function DashboardVisitas() {
     isUpdating,
     createVisita,
     isCreating,
+    deleteVisita,
   } = useVisitas();
 
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
@@ -258,6 +270,18 @@ export default function DashboardVisitas() {
   const handleCloseModal = () => {
     setSelectedVisita(null);
     setIsModalOpen(false);
+  };
+
+  const handleDeleteVisita = async (id: string) => {
+    try {
+      if (isDbConfigured) {
+        await deleteVisita(id);
+      } else {
+        setLocalVisitasFallback((prev) => prev.filter((v) => v.id !== id));
+      }
+    } catch (err) {
+      console.error('Falha ao excluir visita:', err);
+    }
   };
 
   const handleSaveReport = async (id: string, updates: Partial<Visita>) => {
@@ -421,9 +445,14 @@ export default function DashboardVisitas() {
           {/* Coluna 1: Hoje */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
-                <h2 className="text-base font-black text-gray-900">Visitas de Hoje</h2>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Hoje</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
+                  Hoje, <span className="text-orange-500">{getFormattedHeaderDate(hojeStr)}</span>
+                </h2>
               </div>
               <span className="text-[10px] font-black bg-orange-50 border border-orange-200 text-orange-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 {hojeFiltered.length} {hojeFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
@@ -437,7 +466,7 @@ export default function DashboardVisitas() {
                 </div>
               ) : (
                 hojeFiltered.map((v) => (
-                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} />
+                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
                 ))
               )}
             </div>
@@ -446,9 +475,14 @@ export default function DashboardVisitas() {
           {/* Coluna 2: Amanhã */}
           <div className="bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                <h2 className="text-base font-black text-gray-900">Visitas de Amanhã</h2>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Amanhã</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
+                  Amanhã, <span className="text-blue-500">{getFormattedHeaderDate(amanhaStr)}</span>
+                </h2>
               </div>
               <span className="text-[10px] font-black bg-blue-50 border border-blue-200 text-blue-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 {amanhaFiltered.length} {amanhaFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
@@ -462,7 +496,7 @@ export default function DashboardVisitas() {
                 </div>
               ) : (
                 amanhaFiltered.map((v) => (
-                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} />
+                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
                 ))
               )}
             </div>
@@ -488,7 +522,7 @@ export default function DashboardVisitas() {
               </div>
             ) : (
               proximasFiltered.map((v) => (
-                <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} showDate />
+                <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} showDate />
               ))
             )}
           </div>
@@ -501,6 +535,7 @@ export default function DashboardVisitas() {
           onClose={handleCloseModal}
           onSave={handleSaveReport}
           isSaving={isUpdating}
+          onDelete={handleDeleteVisita}
         />
 
         {/* Modal de Agendamento */}

@@ -5,6 +5,7 @@ interface VisitaCardProps {
   visita: Visita;
   onOpenModal: (visita: Visita) => void;
   showDate?: boolean;
+  onDelete?: (id: string) => void;
 }
 
 function checkIsAtrasado(dateStr: string, timeStr: string, status: string): boolean {
@@ -16,7 +17,7 @@ function checkIsAtrasado(dateStr: string, timeStr: string, status: string): bool
   return visitDate < now;
 }
 
-export default function VisitaCard({ visita, onOpenModal, showDate = false }: VisitaCardProps) {
+export default function VisitaCard({ visita, onOpenModal, showDate = false, onDelete }: VisitaCardProps) {
   const clienteNome = visita.projects?.leads?.nome || visita.cliente;
   const endereco = visita.projects?.endereco || visita.endereco;
 
@@ -118,6 +119,22 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false }: Vi
       {/* Lado Direito */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t border-gray-100 md:border-t-0 pt-3 md:pt-0">
         {statusBadge}
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm('Deseja realmente excluir esta visita técnica?')) {
+                onDelete(visita.id);
+              }
+            }}
+            title="Excluir Visita"
+            className="p-1.5 rounded-lg bg-gray-100 hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-gray-400 hover:text-rose-500 transition-all cursor-pointer shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
         <svg
           className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors hidden md:block"
           fill="none"
