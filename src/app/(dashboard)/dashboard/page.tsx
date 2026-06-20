@@ -268,7 +268,7 @@ export default function DashboardHome() {
                 {[
                   { href: '/leads', label: 'Gestão de Leads', sub: `${leadsNovos} novos aguardando`, iconBg: 'bg-blue-50 text-blue-500', hoverBorder: 'hover:border-blue-200' },
                   { href: '/projetos', label: 'Kanban de Projetos', sub: `${emAndamento} obras em andamento`, iconBg: 'bg-orange-50 text-orange-500', hoverBorder: 'hover:border-orange-200' },
-                  { href: '/visitas', label: 'Visitas Técnicas', sub: `${visitasHoje} visitas hoje`, iconBg: 'bg-emerald-50 text-emerald-500', hoverBorder: 'hover:border-emerald-200' },
+                  { href: '/visitas', label: 'Gestão de Visitas Técnicas', sub: `${visitasHoje} visitas hoje`, iconBg: 'bg-emerald-50 text-emerald-500', hoverBorder: 'hover:border-emerald-200' },
                 ].map((item) => (
                   <Link
                     key={item.href}

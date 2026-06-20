@@ -23,7 +23,7 @@ export default function AgendaHeader({
           <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
             Painel de Campo
           </span>
-          <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Visitas Técnicas</h1>
+          <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Gestão de Visitas Técnicas</h1>
           <p className="text-sm text-gray-500 mt-1">Controle de ativações de piso radiante e testes de carga.</p>
         </div>
         <button
