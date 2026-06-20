@@ -155,9 +155,6 @@ export async function criarMembroEquipe(dados: CriarMembroEquipeDados): Promise<
     
     // Fallback: Tentamos inserir na tabela 'perfis_usuarios'
     // Como 'perfis_usuarios' não possui coluna de telefone na migração IAM, omitimos.
-    // E mapeamos role 'vendedor' para 'tecnico' se a constraint na base restringir as roles.
-    const roleDb = roleFormatada === 'vendedor' ? 'tecnico' : 'instalador';
-    
     const { data: perfilUsuarioData, error: perfilUsuarioError } = await supabaseAdmin
       .from('perfis_usuarios')
       .insert([
@@ -165,7 +162,7 @@ export async function criarMembroEquipe(dados: CriarMembroEquipeDados): Promise<
           id: novoId,
           nome_completo: nomeFormatado,
           email: emailFormatado,
-          role: roleDb,
+          role: roleFormatada,
           status_acesso: true,
         }
       ])

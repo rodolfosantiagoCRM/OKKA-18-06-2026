@@ -11,7 +11,7 @@ create table public.perfis_usuarios (
   id uuid references auth.users on delete cascade primary key,
   nome_completo text not null,
   email text not null unique,
-  role text not null check (role in ('admin', 'instalador', 'tecnico')),
+  role text not null check (role in ('admin', 'instalador', 'tecnico', 'mestre', 'vendedor')),
   status_acesso boolean default true not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

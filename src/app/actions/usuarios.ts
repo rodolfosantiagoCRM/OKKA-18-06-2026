@@ -341,9 +341,7 @@ export async function criarUsuarioCompleto(dados: {
     const novoId = authUser.user.id;
 
     // 4. Inserir na tabela 'perfis_usuarios'
-    let roleDb: string = dados.role;
-    if (roleDb === 'mestre') roleDb = 'admin';
-    if (roleDb === 'vendedor') roleDb = 'tecnico';
+    const roleDb: string = dados.role;
 
     // Esperar um pouco ou consultar se o trigger já inseriu para evitar conflito de chave única
     const { data: perfilExistent } = await supabaseAdmin
