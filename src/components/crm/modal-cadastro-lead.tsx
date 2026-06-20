@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lead } from '@/types/database.types';
+import {
+  getMateriaisPredefinidos,
+  criarMaterialPredefinido,
+  atualizarMaterialPredefinido,
+  deletarMaterialPredefinido,
+  type MaterialPredefinido
+} from '@/app/actions/materiais';
 
 interface ModalCadastroLeadProps {
   isOpen: boolean;
@@ -20,18 +27,6 @@ interface ModalCadastroLeadProps {
   }) => Promise<void>;
   isSaving: boolean;
 }
-
-const MATERIAL_OPTIONS = [
-  'Cabo Calefator 15W/m',
-  'Cabo Calefator 20W/m',
-  'Termostato Wifi Black',
-  'Termostato Wifi White',
-  'Termostato Digital Programável',
-  'Isolamento Térmico (Refletivo)',
-  'Sensor de Piso NTC',
-  'Malha Metálica de Fixação',
-  'Fita de Fixação Adesiva',
-];
 
 export default function ModalCadastroLead({
   isOpen,
@@ -52,16 +47,110 @@ export default function ModalCadastroLead({
   const [materiaisPrevistos, setMateriaisPrevistos] = useState<string[]>([]);
   const [observacoes, setObservacoes] = useState('');
 
+  // Estados de Materiais Dinâmicos
+  const [materialOptions, setMaterialOptions] = useState<MaterialPredefinido[]>([]);
+  const [isEditingList, setIsEditingList] = useState(false);
+  const [newMaterialName, setNewMaterialName] = useState('');
+  const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
+  const [editingMaterialName, setEditingMaterialName] = useState('');
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
+  const [isActionPending, setIsActionPending] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Carregar materiais na abertura do modal
+  useEffect(() => {
+    async function loadMaterials() {
+      setIsLoadingMaterials(true);
+      try {
+        const list = await getMateriaisPredefinidos();
+        setMaterialOptions(list);
+      } catch (e) {
+        console.error('Erro ao carregar materiais:', e);
+      } finally {
+        setIsLoadingMaterials(false);
+      }
+    }
+    if (isOpen) {
+      loadMaterials();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleToggleMaterial = (material: string) => {
+  const handleToggleMaterial = (materialName: string) => {
     setMateriaisPrevistos((prev) =>
-      prev.includes(material)
-        ? prev.filter((m) => m !== material)
-        : [...prev, material]
+      prev.includes(materialName)
+        ? prev.filter((m) => m !== materialName)
+        : [...prev, materialName]
     );
+  };
+
+  const handleAddMaterial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMaterialName.trim()) return;
+    setIsActionPending(true);
+    try {
+      const res = await criarMaterialPredefinido(newMaterialName.trim());
+      if (res.success && res.data) {
+        setMaterialOptions((prev) => [...prev, res.data!]);
+      } else {
+        // Fallback local caso tabela não esteja migrada
+        const fallbackItem: MaterialPredefinido = {
+          id: 'local-' + Date.now(),
+          nome: newMaterialName.trim()
+        };
+        setMaterialOptions((prev) => [...prev, fallbackItem]);
+      }
+      setNewMaterialName('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
+
+  const handleUpdateMaterial = async (id: string) => {
+    if (!editingMaterialName.trim()) return;
+    setIsActionPending(true);
+    try {
+      const res = await atualizarMaterialPredefinido(id, editingMaterialName.trim());
+      if (res.success || id.startsWith('local-')) {
+        const oldMaterial = materialOptions.find((m) => m.id === id);
+        setMaterialOptions((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, nome: editingMaterialName.trim() } : m))
+        );
+        // Atualiza a seleção do lead caso o material editado já estivesse selecionado
+        if (oldMaterial) {
+          setMateriaisPrevistos((prev) =>
+            prev.map((m) => (m === oldMaterial.nome ? editingMaterialName.trim() : m))
+          );
+        }
+        setEditingMaterialId(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string) => {
+    setIsActionPending(true);
+    try {
+      const res = await deletarMaterialPredefinido(id);
+      if (res.success || id.startsWith('local-')) {
+        const oldMaterial = materialOptions.find((m) => m.id === id);
+        if (oldMaterial) {
+          setMateriaisPrevistos((prev) => prev.filter((m) => m !== oldMaterial.nome));
+        }
+        setMaterialOptions((prev) => prev.filter((m) => m.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsActionPending(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +164,7 @@ export default function ModalCadastroLead({
         nome: nome.trim(),
         email: email.trim() || null,
         telefone: telefone.trim(),
-        cidade: cidade.trim(),
+        cidade: cityCapitalize(cidade.trim()),
         area_m2: areaM2 ? parseFloat(areaM2) : null,
         endereco_obra: enderecoObra.trim() || null,
         valor_estimado: valorEstimado ? parseFloat(valorEstimado) : null,
@@ -89,6 +178,10 @@ export default function ModalCadastroLead({
       setErrorMessage(msg);
     }
   };
+
+  function cityCapitalize(val: string) {
+    return val.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
 
   const inputClass = "w-full bg-gray-50 border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm";
   const selectClass = "w-full bg-gray-50 border border-gray-200 hover:border-gray-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-gray-800 outline-none transition-all text-sm cursor-pointer appearance-none";
@@ -264,44 +357,187 @@ export default function ModalCadastroLead({
 
             {/* Seção 3: Planejamento de Materiais e Orçamento */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-                <span className="w-1.5 h-3 bg-orange-500 rounded-full" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-800">3. Materiais Previstos & Observações</h4>
+              <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-3 bg-orange-500 rounded-full" />
+                  <h4 className="text-xs font-black uppercase tracking-wider text-gray-800">3. Materiais Previstos & Observações</h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingList(!isEditingList)}
+                  className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100/70 border border-orange-200/60 px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                >
+                  {isEditingList ? (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Voltar à Seleção
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Configurar Lista
+                    </>
+                  )}
+                </button>
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className={labelClass}>Materiais Necessários (Previsão)</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                    {MATERIAL_OPTIONS.map((material) => {
-                      const selected = materiaisPrevistos.includes(material);
-                      return (
+                {isEditingList ? (
+                  // MODO EDICAO DA LISTA
+                  <div className="space-y-4">
+                    {/* Form Adicionar */}
+                    <div className="p-4 bg-orange-50/50 border border-orange-100 rounded-xl space-y-2">
+                      <label className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">Cadastrar Novo Material Pré-definido</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Ex: Termostato Smart Black 220V"
+                          value={newMaterialName}
+                          onChange={(e) => setNewMaterialName(e.target.value)}
+                          className="flex-1 bg-white border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl px-3.5 py-2 text-xs text-gray-800 placeholder-gray-400 outline-none transition-all"
+                        />
                         <button
-                          key={material}
                           type="button"
-                          onClick={() => handleToggleMaterial(material)}
-                          className={`flex items-center gap-2.5 px-3 py-2 border rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
-                            selected
-                              ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-sm'
-                              : 'bg-white border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-gray-50/50'
-                          }`}
+                          onClick={handleAddMaterial}
+                          disabled={isActionPending || !newMaterialName.trim()}
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1 shrink-0"
                         >
-                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-all ${
-                            selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 bg-white'
-                          }`}>
-                            {selected && (
-                              <svg className="w-3.5 h-3.5 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <span className="truncate">{material}</span>
+                          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Incluir
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
+                    {/* Lista Editável */}
+                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                      {materialOptions.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic text-center py-4">Nenhum material na lista de pré-definidos.</p>
+                      ) : (
+                        materialOptions.map((mat) => {
+                          const isEditing = editingMaterialId === mat.id;
+                          return (
+                            <div key={mat.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white border border-gray-100 hover:border-gray-200 rounded-xl transition-all shadow-sm">
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editingMaterialName}
+                                  onChange={(e) => setEditingMaterialName(e.target.value)}
+                                  className="flex-1 bg-gray-50 border border-gray-200 focus:border-orange-400 rounded-lg px-2.5 py-1 text-xs text-gray-800 outline-none"
+                                  autoFocus
+                                />
+                              ) : (
+                                <span className="text-xs font-bold text-gray-700 truncate">{mat.nome}</span>
+                              )}
+                              
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isEditing ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateMaterial(mat.id)}
+                                      disabled={isActionPending || !editingMaterialName.trim()}
+                                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Salvar Nome"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMaterialId(null)}
+                                      className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                      title="Cancelar"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingMaterialId(mat.id);
+                                        setEditingMaterialName(mat.nome);
+                                      }}
+                                      className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Editar Nome"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteMaterial(mat.id)}
+                                      disabled={isActionPending}
+                                      className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Excluir da Lista"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // MODO SELECAO NORMAL DE MATERIAIS
+                  <div className="space-y-2">
+                    <label className={labelClass}>Selecione os Materiais Necessários (Previsão)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                      {isLoadingMaterials ? (
+                        <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Carregando materiais...</p>
+                      ) : materialOptions.length === 0 ? (
+                        <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Nenhum material pré-definido. Clique em [Configurar Lista] para adicionar.</p>
+                      ) : (
+                        materialOptions.map((mat) => {
+                          const selected = materiaisPrevistos.includes(mat.nome);
+                          return (
+                            <button
+                              key={mat.id}
+                              type="button"
+                              onClick={() => handleToggleMaterial(mat.nome)}
+                              className={`flex items-center gap-2.5 px-3 py-2.5 border rounded-xl text-left text-xs font-bold transition-all duration-200 cursor-pointer ${
+                                selected
+                                  ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-sm shadow-orange-500/5'
+                                  : 'bg-white border-gray-200/80 text-gray-600 hover:border-orange-200 hover:bg-orange-50/10'
+                              }`}
+                            >
+                              <div className={`w-4.5 h-4.5 rounded-lg border flex items-center justify-center shrink-0 transition-all ${
+                                selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 bg-white'
+                              }`}>
+                                {selected && (
+                                  <svg className="w-3 h-3 font-bold text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="truncate">{mat.nome}</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Campo de Observações */}
                 <div className="space-y-1.5">
                   <label htmlFor="observacoes" className={labelClass}>Observações / Requisitos Especiais</label>
                   <textarea
