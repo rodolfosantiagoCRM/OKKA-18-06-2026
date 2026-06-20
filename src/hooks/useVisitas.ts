@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { visitasService } from '@/services/visitasService';
 import { Visita } from '@/types/database.types';
-import { getGroupedVisitas, deleteVisitaAction } from '@/app/actions/visitas';
+import { getGroupedVisitas } from '@/app/actions/visitas';
 
 export function useVisitas() {
   const queryClient = useQueryClient();
@@ -33,12 +33,13 @@ export function useVisitas() {
     },
   });
 
-  // Mutação para exclusão de uma visita técnica via Server Action (bypassa RLS)
+  // Mutação para exclusão de uma visita técnica via API Route com service_role (bypassa RLS)
   const deleteVisitaMutation = useMutation({
     mutationFn: async (id: string) => {
-      const result = await deleteVisitaAction(id);
-      if (!result.success) {
-        throw new Error(result.error || 'Erro ao excluir visita.');
+      const response = await fetch(`/api/visitas/${id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || `Erro ${response.status} ao excluir visita.`);
       }
     },
     onSuccess: () => {
