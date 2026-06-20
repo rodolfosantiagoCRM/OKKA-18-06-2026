@@ -2,14 +2,63 @@
 
 import { createServerClient } from '@/lib/supabase';
 import { Visita } from '@/types/database.types';
+import { cookies } from 'next/headers';
 
 export async function getGroupedVisitas() {
   const supabase = createServerClient();
 
-  // Buscar todas as visitas incluindo joins necessários
-  const { data, error } = await supabase
+  // Validar se o usuário logado é técnico ou instalador e filtrar por ID
+  const cookieStore = await cookies();
+  const token = cookieStore.get('sb-access-token')?.value;
+  
+  let currentUserId: string | null = null;
+  let isTechnicalUser = false;
+
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) {
+      currentUserId = user.id;
+      let role = user.user_metadata?.role || '';
+      
+      if (!role) {
+        // Tentar obter da tabela perfis_usuarios
+        const { data: perfil } = await supabase
+          .from('perfis_usuarios')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (perfil?.role) {
+          role = perfil.role;
+        } else {
+          // Tentar obter da tabela perfis
+          const { data: perfilAntigo } = await supabase
+            .from('perfis')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          if (perfilAntigo?.role) {
+            role = perfilAntigo.role;
+          }
+        }
+      }
+      
+      const normalizedRole = (role || '').toLowerCase();
+      if (normalizedRole === 'tecnico' || normalizedRole === 'instalador') {
+        isTechnicalUser = true;
+      }
+    }
+  }
+
+  let query = supabase
     .from('visits')
-    .select('*, projects(*, leads(*)), responsaveis_tecnicos(*)')
+    .select('*, projects(*, leads(*)), responsaveis_tecnicos(*)');
+
+  // Aplicar restrição de técnico se for o caso
+  if (isTechnicalUser && currentUserId) {
+    query = query.eq('tecnico_id', currentUserId);
+  }
+
+  const { data, error } = await query
     .order('data_visita', { ascending: true })
     .order('horario', { ascending: true });
 

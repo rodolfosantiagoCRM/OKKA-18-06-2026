@@ -8,6 +8,7 @@ export async function createResponsavelTecnico(
     nome: string;
     telefone: string;
     email: string;
+    senha?: string;
   },
   token?: string
 ): Promise<ResponsavelTecnico> {
@@ -39,11 +40,11 @@ export async function createResponsavelTecnico(
   }
 
   // 3. Criar o usuário no auth.users usando a API de Admin
-  const defaultPassword = 'OkkaTeam2026!';
+  const senhaDefinida = data.senha && data.senha.trim() ? data.senha.trim() : 'OkkaTeam2026!';
   
   const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
     email: data.email.trim(),
-    password: defaultPassword,
+    password: senhaDefinida,
     email_confirm: true,
     user_metadata: {
       name: data.nome.trim(),
