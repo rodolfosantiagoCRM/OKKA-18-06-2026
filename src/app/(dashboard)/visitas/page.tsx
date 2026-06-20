@@ -169,6 +169,29 @@ function getFormattedHeaderDate(dateStr: string) {
   return `${parseInt(day, 10)} ${monthName}`;
 }
 
+function getFormattedFullDateWithDayOfWeek(dateStr: string) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const weekdays = [
+    'Domingo',
+    'Segunda-Feira',
+    'Terça-Feira',
+    'Quarta-Feira',
+    'Quinta-Feira',
+    'Sexta-Feira',
+    'Sábado'
+  ];
+  const monthName = months[month - 1];
+  const weekdayName = weekdays[date.getDay()];
+  
+  return `${day} ${monthName} ${year} — ${weekdayName}`;
+}
+
 export default function DashboardVisitas() {
   const {
     visitas: dbVisitas,
@@ -373,6 +396,23 @@ export default function DashboardVisitas() {
   const amanhaFiltered = useMemo(() => applyFilters(activeAmanha), [activeAmanha, searchTerm, statusFilter]);
   const proximasFiltered = useMemo(() => applyFilters(activeProximas), [activeProximas, searchTerm, statusFilter]);
 
+  // Agrupar as próximas visitas por data
+  const proximasGroupedByDate = useMemo(() => {
+    const groups: Record<string, Visita[]> = {};
+    proximasFiltered.forEach((v) => {
+      if (!groups[v.data_visita]) {
+        groups[v.data_visita] = [];
+      }
+      groups[v.data_visita].push(v);
+    });
+    return Object.keys(groups)
+      .sort()
+      .map((date) => ({
+        date,
+        visitas: groups[date],
+      }));
+  }, [proximasFiltered]);
+
   // KPIs
   const totalHoje = activeHoje.filter((v) => v.status_visita === 'Agendada').length;
   const materiaisPendentesCount = activeRaw.filter(
@@ -515,14 +555,26 @@ export default function DashboardVisitas() {
             </span>
           </div>
 
-          <div className="space-y-3">
-            {proximasFiltered.length === 0 ? (
+          <div className="space-y-6">
+            {proximasGroupedByDate.length === 0 ? (
               <div className="text-center py-8 text-gray-400 italic text-sm">
                 Nenhuma outra visita futura agendada.
               </div>
             ) : (
-              proximasFiltered.map((v) => (
-                <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} showDate />
+              proximasGroupedByDate.map((group) => (
+                <div key={group.date} className="space-y-3">
+                  <div className="flex items-center gap-2 pt-2 pb-1 border-b border-gray-100/50">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                    <h3 className="text-xs font-black text-purple-700 tracking-wide uppercase">
+                      {getFormattedFullDateWithDayOfWeek(group.date)}
+                    </h3>
+                  </div>
+                  <div className="space-y-3 pl-4 border-l-2 border-purple-100/60">
+                    {group.visitas.map((v) => (
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                    ))}
+                  </div>
+                </div>
               ))
             )}
           </div>
