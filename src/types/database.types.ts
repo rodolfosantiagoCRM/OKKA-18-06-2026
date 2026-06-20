@@ -45,6 +45,8 @@ export interface Visita {
   endereco?: string; // Propriedade opcional para dados de mockup local
   projects?: Project & { leads?: Lead | null } | null;
   responsaveis_tecnicos?: ResponsavelTecnico | null;
+  whatsapp_enviado?: boolean;
+  whatsapp_log?: string | null;
 }
 
 export interface ResponsavelTecnico {
@@ -62,5 +64,19 @@ export interface PerfilUsuario {
   role: 'admin' | 'instalador' | 'tecnico' | 'mestre' | 'vendedor';
   status_acesso: boolean;
   created_at: string;
+}
+
+export interface WhatsappConfig {
+  id: number;
+  ativo: boolean;
+  api_provider: 'evolution' | 'zapi' | 'custom';
+  api_url: string | null;
+  api_key: string | null;
+  instancia: string | null;
+  antecedencia_minutos: number;
+  mensagem_template: string;
+  headers_customizados: string | null;
+  payload_customizado: string | null;
+  updated_at: string;
 }
 

@@ -471,6 +471,7 @@ export interface PermissoesAbas {
   projetos: boolean;
   equipe: boolean;
   eficiencia: boolean;
+  configuracoes?: boolean;
   updated_at?: string;
 }
 
