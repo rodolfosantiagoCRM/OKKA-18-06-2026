@@ -31,6 +31,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: #FCFBFA;
   --foreground: #0B0F19;
   --card: #ffffff;
@@ -49,29 +50,6 @@
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #E25B3C;
-}
-
-/* Dark mode for the CRM and dashboard */
-.dark {
-  --background: #0B0F19;
-  --foreground: #F8FAFC;
-  --card: #111726;
-  --card-foreground: #F8FAFC;
-  --popover: #111726;
-  --popover-foreground: #F8FAFC;
-  --primary: #E25B3C;
-  --primary-foreground: #ffffff;
-  --secondary: #1E293B;
-  --secondary-foreground: #F8FAFC;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #2c2522;
-  --accent-foreground: #f97316;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
   --ring: #E25B3C;
 }
 

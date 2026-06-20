@@ -1,3 +1,4 @@
+import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
@@ -9,10 +10,10 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_A
   );
 }
 
-// Cliente padrão para Client Components (navegador)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Cliente singleton para Client Components (navegador) usando @supabase/ssr
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
-// Helper para instanciar no servidor (Server Components e API Routes)
+// Helper síncrono para instanciar no servidor (preserva compatibilidade com as Server Actions existentes)
 export function createServerClient() {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
   return createClient(supabaseUrl, supabaseServiceKey);
