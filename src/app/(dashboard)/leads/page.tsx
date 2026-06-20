@@ -26,7 +26,9 @@ export default function LeadsDashboard() {
   const { createProject, isCreating } = useProjects();
 
   const [localLeadsFallback, setLocalLeadsFallback] = useState<Lead[]>(MOCK_FALLBACK_LEADS);
-  const isDbConfigured = dbLeads.length > 0;
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
   const listLeads = isDbConfigured ? dbLeads : localLeadsFallback;
 
   const [searchTerm, setSearchTerm] = useState('');

@@ -34,7 +34,9 @@ export default function ProjectsKanban() {
   const [localProjectsFallback, setLocalProjectsFallback] = useState<Project[]>(MOCK_FALLBACK_PROJECTS);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const isDbConfigured = dbProjects.length > 0;
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
   const listProjects = isDbConfigured ? dbProjects : localProjectsFallback;
 
   const filteredProjects = listProjects.filter((project) => {

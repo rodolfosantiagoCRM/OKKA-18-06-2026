@@ -43,7 +43,7 @@ create policy "Tecnicos e Instaladores podem ver suas visitas"
     OR exists (
       select 1 from public.perfis_usuarios
       where perfis_usuarios.id = auth.uid()
-      and perfis_ateurs.role IN ('admin', 'mestre')
+      and perfis_usuarios.role IN ('admin', 'mestre')
     )
   );
 

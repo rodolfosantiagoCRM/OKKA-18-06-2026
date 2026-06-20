@@ -227,7 +227,9 @@ export default function DashboardVisitas() {
   // Fallback local caso o banco esteja vazio
   const [localVisitasFallback, setLocalVisitasFallback] = useState<Visita[]>(MOCK_FALLBACK_VISITAS);
 
-  const isDbConfigured = dbVisitas.length > 0;
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
   // Gerar datas no fuso horário do Brasil para o mock, se necessário
   const clientDates = useMemo(() => {
