@@ -213,6 +213,13 @@ export default function DashboardVisitas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
 
+  // Toast de feedback
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // Estados dos filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todas');
@@ -299,11 +306,17 @@ export default function DashboardVisitas() {
     try {
       if (isDbConfigured) {
         await deleteVisita(id);
+        showToast('Visita excluída com sucesso!', 'success');
       } else {
         setLocalVisitasFallback((prev) => prev.filter((v) => v.id !== id));
+        showToast('Visita removida!', 'success');
       }
-    } catch (err) {
+      // Fecha modal se estiver aberto
+      setIsModalOpen(false);
+      setSelectedVisita(null);
+    } catch (err: any) {
       console.error('Falha ao excluir visita:', err);
+      showToast(err?.message || 'Erro ao excluir visita. Verifique as permissões.', 'error');
     }
   };
 
@@ -448,34 +461,126 @@ export default function DashboardVisitas() {
           onAgendarClick={() => setIsAgendarModalOpen(true)}
         />
 
-        {/* 1. Alerta de Atrasos */}
-        {atrasadasFiltered.length > 0 && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 md:p-5 flex items-start gap-4 shadow-sm animate-pulse">
-            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        {/* Toast de Feedback */}
+        {toast && (
+          <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 text-white text-sm font-bold ${
+            toast.type === 'error' ? 'bg-rose-600 border border-rose-500' : 'bg-gray-900 border border-gray-800'
+          }`}>
+            {toast.type === 'error' ? (
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-black text-rose-800">Atenção: Existem visitas técnicas em atraso!</h3>
-              <p className="text-xs text-rose-600 mt-1 leading-relaxed">
-                As seguintes visitas estão agendadas para datas passadas e ainda não foram marcadas como concluídas (Realizada/Cancelada):
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {atrasadasFiltered.map((v) => {
-                  const clienteNome = v.projects?.leads?.nome || v.cliente;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => handleOpenModal(v)}
-                      className="px-3 py-1 bg-white border border-rose-200 hover:border-rose-400 text-[10px] font-bold text-rose-700 rounded-lg shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      {clienteNome} ({v.data_visita.split('-').reverse().slice(0, 2).join('/')})
-                    </button>
-                  );
-                })}
+            ) : (
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+            {toast.msg}
+          </div>
+        )}
+
+        {/* 1. Painel de Visitas em Atraso */}
+        {atrasadasFiltered.length > 0 && (
+          <div className="bg-white border border-rose-200 rounded-2xl shadow-sm overflow-hidden">
+            {/* Cabeçalho do Painel */}
+            <div className="flex items-center justify-between px-5 py-4 bg-rose-50 border-b border-rose-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-rose-800">Visitas Técnicas em Atraso</h3>
+                  <p className="text-[10px] text-rose-500 font-medium mt-0.5">Agendadas para datas passadas — ainda não foram concluídas ou canceladas</p>
+                </div>
               </div>
+              <span className="text-[10px] font-black bg-rose-100 border border-rose-200 text-rose-700 px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                {atrasadasFiltered.length} {atrasadasFiltered.length === 1 ? 'atraso' : 'atrasos'}
+              </span>
+            </div>
+
+            {/* Tabela de Atrasos */}
+            <div className="divide-y divide-rose-50">
+              {atrasadasFiltered.map((v) => {
+                const clienteNome = v.projects?.leads?.nome || v.cliente || '—';
+                const endereco = v.projects?.endereco || v.endereco || '—';
+                const tecnicoNome = v.responsaveis_tecnicos?.nome || (v.tecnico_id ? 'Técnico #' + v.tecnico_id.slice(0, 6) : 'Não definido');
+                const [yr, mo, dy] = v.data_visita.split('-');
+                const dataFormatada = `${dy}/${mo}/${yr}`;
+                const hora = v.horario?.substring(0, 5) || '—';
+                
+                // Calcular dias de atraso
+                const hoje = new Date();
+                const dataVisita = new Date(Number(yr), Number(mo) - 1, Number(dy));
+                const diasAtraso = Math.floor((hoje.getTime() - dataVisita.getTime()) / (1000 * 60 * 60 * 24));
+
+                return (
+                  <div
+                    key={v.id}
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-rose-50/40 transition-colors group"
+                  >
+                    {/* Badge de data/hora */}
+                    <div className="shrink-0 text-center min-w-[72px]">
+                      <div className="bg-rose-50 border border-rose-200 rounded-xl px-2.5 py-2">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">{dataFormatada}</p>
+                        <p className="text-sm font-black text-rose-700 font-mono leading-none mt-0.5">{hora}</p>
+                        <p className="text-[8px] text-rose-400 font-semibold mt-0.5">hs</p>
+                      </div>
+                    </div>
+
+                    {/* Info principal */}
+                    <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1">
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Cliente</p>
+                        <p className="text-sm font-black text-gray-900 truncate">{clienteNome}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Endereço / Obra</p>
+                        <p className="text-xs text-gray-600 truncate">{endereco}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Técnico Responsável</p>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-[8px] font-black shrink-0">
+                            {tecnicoNome.charAt(0)}
+                          </div>
+                          <p className="text-xs font-semibold text-gray-700 truncate">{tecnicoNome}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badge de atraso + ações */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-full">
+                        +{diasAtraso}d
+                      </span>
+                      <button
+                        onClick={() => handleOpenModal(v)}
+                        title="Editar / Regularizar"
+                        className="p-1.5 rounded-lg bg-gray-100 hover:bg-orange-50 border border-gray-200 hover:border-orange-300 text-gray-400 hover:text-orange-500 transition-all cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Excluir a visita de ${clienteNome} (${dataFormatada})?`)) {
+                            handleDeleteVisita(v.id);
+                          }
+                        }}
+                        title="Excluir Visita"
+                        className="p-1.5 rounded-lg bg-gray-100 hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-gray-400 hover:text-rose-500 transition-all cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

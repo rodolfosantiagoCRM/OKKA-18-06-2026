@@ -88,7 +88,10 @@ export async function getGroupedVisitas() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const amanhaStr = formatTZ(tomorrow);
 
-  // Agrupamento baseado nas datas do servidor (evitando fuso horário cliente)
+  // IMPORTANTE: atrasadas = status 'Agendada' com data ANTERIOR a hoje (não aparecem em "Hoje")
+  // hoje = visitas do dia de hoje (todos os status)
+  // amanha = visitas de amanhã
+  // proximas = visitas após amanhã
   const atrasadas = visits.filter(v => v.data_visita < hojeStr && v.status_visita === 'Agendada');
   const hoje = visits.filter(v => v.data_visita === hojeStr);
   const amanha = visits.filter(v => v.data_visita === amanhaStr);
@@ -103,4 +106,30 @@ export async function getGroupedVisitas() {
     proximas,
     rawVisitas: visits,
   };
+}
+
+/**
+ * Exclui uma visita técnica pelo ID usando service_role (ignora RLS).
+ * Deve ser chamada apenas por administradores/mestres.
+ */
+export async function deleteVisitaAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // createServerClient usa SUPABASE_SERVICE_ROLE_KEY → bypassa RLS
+    const supabase = createServerClient();
+    
+    const { error } = await supabase
+      .from('visits')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao excluir visita:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Exceção ao excluir visita:', err);
+    return { success: false, error: err?.message || 'Erro inesperado ao excluir visita.' };
+  }
 }

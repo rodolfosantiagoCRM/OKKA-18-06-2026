@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { visitasService } from '@/services/visitasService';
 import { Visita } from '@/types/database.types';
-import { getGroupedVisitas } from '@/app/actions/visitas';
+import { getGroupedVisitas, deleteVisitaAction } from '@/app/actions/visitas';
 
 export function useVisitas() {
   const queryClient = useQueryClient();
@@ -33,9 +33,14 @@ export function useVisitas() {
     },
   });
 
-  // Mutação para exclusão de uma visita técnica
+  // Mutação para exclusão de uma visita técnica via Server Action (bypassa RLS)
   const deleteVisitaMutation = useMutation({
-    mutationFn: (id: string) => visitasService.deleteVisita(id),
+    mutationFn: async (id: string) => {
+      const result = await deleteVisitaAction(id);
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao excluir visita.');
+      }
+    },
     onSuccess: () => {
       // Força a revalidação imediata do cronograma de visitas
       queryClient.invalidateQueries({ queryKey: ['visitas'] });
