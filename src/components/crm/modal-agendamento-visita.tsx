@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useResponsaveis } from '@/hooks/useResponsaveis';
 import { Project } from '@/types/database.types';
@@ -38,8 +38,8 @@ function formatDisplayDate(val: string) {
 const MOCK_FALLBACK_PROJECTS: Project[] = [
   { id: 'p1', lead_id: 'l1', status_projeto: 'Instalação', endereco: 'Rua das Palmeiras, 405 - Cond. Royal - Curitiba', valor_total: 12500, criado_em: '2026-06-10T00:00:00Z', leads: { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T00:00:00Z' } },
   { id: 'p2', lead_id: 'l2', status_projeto: 'Instalação', endereco: 'Av. Batel, 1200 - Apto 402 - Curitiba', valor_total: 8000, criado_em: '2026-06-12T00:00:00Z', leads: { id: 'l2', nome: 'Clarice Lispector', email: 'clarice@email.com', telefone: '(41) 99999-2222', cidade: 'Curitiba', area_m2: 45, status: 'Qualificado', criado_em: '2026-06-11T00:00:00Z' } },
-  { id: 'p3', lead_id: 'l3', status_projeto: 'Orçamento', endereco: 'Rua Desembargador Motta, 882 - Mercês', valor_total: 15400, criado_em: '2026-06-15T00:00:00Z', leads: { id: 'l3', nome: 'Julio Cortázar', email: 'julio@email.com', telefone: '(41) 99999-3333', cidade: 'Curitiba', area_m2: 110, status: 'Qualificado', criado_em: '2026-06-14T00:00:00Z' } },
-  { id: 'p4', lead_id: 'l4', status_projeto: 'Orçamento', endereco: 'Al. Julia da Costa, 150 - Cabral', valor_total: 9800, criado_em: '2026-06-16T00:00:00Z', leads: { id: 'l4', nome: 'Gabriel García Márquez', email: 'gabriel@email.com', telefone: '(41) 99999-4444', cidade: 'Curitiba', area_m2: 60, status: 'Qualificado', criado_em: '2026-06-15T00:00:00Z' } },
+  { id: 'p3', lead_id: 'l3', status_projeto: 'Orçamento', endereco: 'Rua Desembargador Motta, 882 - Mercês', valor_total: 15400, criado_em: '2026-06-15T00:00:00Z', leads: { id: 'l3', nome: 'Julio Cortázar', email: 'julio@email.com', telefone: '(41) 99999-3333', cidade: 'Curitiba', area_m2: 110, status: 'Qualificado', criado_em: '2026-06-14T11:00:00Z' } },
+  { id: 'p4', lead_id: 'l4', status_projeto: 'Orçamento', endereco: 'Al. Julia da Costa, 150 - Cabral', valor_total: 9800, criado_em: '2026-06-16T00:00:00Z', leads: { id: 'l4', nome: 'Gabriel García Márquez', email: 'gabriel@email.com', telefone: '(41) 99999-4444', cidade: 'Curitiba', area_m2: 60, status: 'Qualificado', criado_em: '2026-06-15T16:20:00Z' } },
 ];
 
 export default function ModalAgendamentoVisita({
@@ -51,7 +51,13 @@ export default function ModalAgendamentoVisita({
   const { projects: dbProjects, isLoading: isLoadingProjects } = useProjects();
   const { responsaveis: dbResponsaveis } = useResponsaveis();
 
-  const [projectId, setProjectId] = useState('');
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
+  const projects = isDbConfigured ? dbProjects : MOCK_FALLBACK_PROJECTS;
+
+  const [projectId, setProjectId] = useState(() => (projects.length > 0 ? projects[0].id : ''));
   const [dataVisita, setDataVisita] = useState(getTodayStr);
   const [horario, setHorario] = useState('09:00');
   const [tecnicoId, setTecnicoId] = useState('');
@@ -61,26 +67,21 @@ export default function ModalAgendamentoVisita({
   const dateInputRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
 
-  const projects = dbProjects.length > 0 ? dbProjects : MOCK_FALLBACK_PROJECTS;
-
   const MOCK_FALLBACK_TECNICOS = [
     { id: 't1', nome: 'Carlos Eduardo Silva' },
     { id: 't2', nome: 'Fernanda Lima Souza' },
     { id: 't3', nome: 'Rodrigo Medeiros' },
   ];
-  const responsaveis = dbResponsaveis.length > 0 ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
+  const responsaveis = isDbConfigured ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
 
-  useEffect(() => {
-    if (isOpen) {
-      setProjectId(projects.length > 0 ? projects[0].id : '');
-      setDataVisita(getTodayStr());
-      setHorario('09:00');
-      setTecnicoId('');
-      setObservacoes('');
-      setErrorMessage('');
+  // Ajusta o projectId se a lista de projetos carregar depois
+  const [prevProjects, setPrevProjects] = useState(projects);
+  if (projects !== prevProjects) {
+    setPrevProjects(projects);
+    if (projects.length > 0 && (!projectId || !projects.some(p => p.id === projectId))) {
+      setProjectId(projects[0].id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -148,6 +149,21 @@ export default function ModalAgendamentoVisita({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {errorMessage}
+              </div>
+            )}
+
+            {/* Aviso de falta de projetos no banco */}
+            {isDbConfigured && projects.length === 0 && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-xs font-semibold flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4.5 h-4.5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Nenhum projeto cadastrado no banco de dados.</span>
+                </div>
+                <p className="text-[11px] font-normal leading-relaxed text-amber-600 pl-6">
+                  Para agendar uma visita, você precisa ter um projeto ativo. Cadastre um lead no menu <strong>Leads</strong> e mude o status para <strong>Qualificado</strong> para gerar um projeto automaticamente.
+                </p>
               </div>
             )}
 

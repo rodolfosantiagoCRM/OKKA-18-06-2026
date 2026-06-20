@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useLeads } from '@/hooks/useLeads';
 import { useProjects } from '@/hooks/useProjects';
 import { Lead } from '@/types/database.types';
+import ModalCadastroLead from '@/components/crm/modal-cadastro-lead';
 
 const MOCK_FALLBACK_LEADS: Lead[] = [
   { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T14:30:00Z' },
@@ -22,8 +23,8 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; 
 };
 
 export default function LeadsDashboard() {
-  const { leads: dbLeads, isLoading, createLead } = useLeads();
-  const { createProject, isCreating } = useProjects();
+  const { leads: dbLeads, createLead, updateLeadStatus, isCreating: isCreatingLead } = useLeads();
+  const { createProject, isCreating: isCreatingProject } = useProjects();
 
   const [localLeadsFallback, setLocalLeadsFallback] = useState<Lead[]>(MOCK_FALLBACK_LEADS);
   const isDbConfigured =
@@ -41,6 +42,10 @@ export default function LeadsDashboard() {
   const [projectAddress, setProjectAddress] = useState('');
   const [projectValue, setProjectValue] = useState('');
   const [loadingAction, setLoadingAction] = useState(false);
+
+  // Novos estados para gerenciamento de CRM
+  const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
+  const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
 
   const filteredLeads = listLeads.filter((lead) => {
     const matchesSearch =
@@ -85,6 +90,7 @@ export default function LeadsDashboard() {
           valor_total: parseFloat(projectValue) || 0,
           status_projeto: 'Orçamento',
         });
+        await updateLeadStatus({ id: selectedLead.id, status: 'Qualificado' });
       } else {
         setLocalLeadsFallback((prev) =>
           prev.map((l) => (l.id === selectedLead.id ? { ...l, status: 'Qualificado' } : l))
@@ -95,6 +101,54 @@ export default function LeadsDashboard() {
       console.error('Falha ao qualificar lead:', err);
     } finally {
       setLoadingAction(false);
+    }
+  };
+
+  const handleSaveLead = async (leadData: {
+    nome: string;
+    email: string | null;
+    telefone: string;
+    cidade: string;
+    area_m2: number | null;
+    endereco_obra?: string | null;
+    valor_estimado?: number | null;
+    materiais_previstos?: string[] | null;
+    observacoes?: string | null;
+    status: Lead['status'];
+  }) => {
+    try {
+      if (isDbConfigured) {
+        const newLead = await createLead(leadData);
+
+        if (leadData.status === 'Qualificado') {
+          await createProject({
+            lead_id: newLead.id,
+            endereco: leadData.endereco_obra || `${leadData.cidade} - PR, Brasil`,
+            valor_total: leadData.valor_estimado || 0,
+            status_projeto: 'Orçamento',
+          });
+        }
+      } else {
+        const newId = `l-local-${Date.now()}`;
+        const newRecord: Lead = {
+          id: newId,
+          nome: leadData.nome,
+          email: leadData.email,
+          telefone: leadData.telefone,
+          cidade: leadData.cidade,
+          area_m2: leadData.area_m2,
+          status: leadData.status,
+          criado_em: new Date().toISOString(),
+          endereco_obra: leadData.endereco_obra,
+          valor_estimado: leadData.valor_estimado,
+          materiais_previstos: leadData.materiais_previstos,
+          observacoes: leadData.observacoes,
+        };
+        setLocalLeadsFallback((prev) => [newRecord, ...prev]);
+      }
+    } catch (err) {
+      console.error('Erro ao cadastrar lead no dashboard:', err);
+      throw err;
     }
   };
 
@@ -113,12 +167,23 @@ export default function LeadsDashboard() {
             <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Gestão de Leads</h1>
             <p className="text-sm text-gray-500 mt-1">Qualificação, triagem e criação automatizada de projetos.</p>
           </div>
-          {leadsNovos > 0 && (
-            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-xs font-bold text-blue-700">{leadsNovos} novos aguardando</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 self-start md:self-end">
+            {leadsNovos > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-xs font-bold text-blue-700">{leadsNovos} novos</span>
+              </div>
+            )}
+            <button
+              onClick={() => setIsAddLeadModalOpen(true)}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Cadastrar Lead
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -179,46 +244,140 @@ export default function LeadsDashboard() {
                 ) : (
                   paginatedLeads.map((lead) => {
                     const cfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG['Novo'];
+                    const isExpanded = expandedLeadId === lead.id;
                     return (
-                      <tr key={lead.id} className="hover:bg-gray-50/80 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-sm">
-                              {lead.nome.charAt(0)}
+                      <React.Fragment key={lead.id}>
+                        <tr
+                          onClick={() => setExpandedLeadId(isExpanded ? null : lead.id)}
+                          className="hover:bg-gray-50/80 transition-colors cursor-pointer select-none"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-sm animate-fade-in">
+                                {lead.nome.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-gray-900">{lead.nome}</span>
+                                <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1.5 mt-0.5 group-hover:text-orange-500 transition-colors">
+                                  {isExpanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+                                  <svg className={`w-2.5 h-2.5 transition-transform ${isExpanded ? 'rotate-180 text-orange-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </span>
+                              </div>
                             </div>
-                            <span className="font-bold text-gray-900">{lead.nome}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs font-semibold text-gray-700">{lead.telefone}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">{lead.email || 'N/A'}</div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{lead.cidade}</td>
-                        <td className="px-6 py-4 font-mono font-bold text-gray-700">
-                          {lead.area_m2 ? `${lead.area_m2} m²` : '-'}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                            {lead.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {lead.status !== 'Qualificado' && lead.status !== 'Perdido' ? (
-                            <button
-                              onClick={() => handleOpenQualifyModal(lead)}
-                              className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm shadow-orange-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                            >
-                              Qualificar
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                              </svg>
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-300 italic font-medium">Concluído</span>
-                          )}
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-semibold text-gray-700">{lead.telefone}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{lead.email || 'N/A'}</div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{lead.cidade}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-gray-700">
+                            {lead.area_m2 ? `${lead.area_m2} m²` : '-'}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                              {lead.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {lead.status !== 'Qualificado' && lead.status !== 'Perdido' ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenQualifyModal(lead);
+                                }}
+                                className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm shadow-orange-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                              >
+                                Qualificar
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic font-medium">Concluído</span>
+                            )}
+                          </td>
+                        </tr>
+                        
+                        {isExpanded && (
+                          <tr className="bg-orange-50/10">
+                            <td colSpan={6} className="px-6 py-5 border-t border-b border-orange-100">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-gray-700">
+                                {/* Coluna 1: Endereço & Localização */}
+                                <div className="space-y-2 border-r border-gray-100 pr-4">
+                                  <div className="flex items-center gap-1.5 font-bold text-gray-400 uppercase tracking-wider text-[9px]">
+                                    <svg className="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Local da Obra
+                                  </div>
+                                  <div className="pl-5.5 space-y-1">
+                                    <p className="font-semibold text-gray-950">{lead.endereco_obra || 'Endereço da obra não informado'}</p>
+                                    <p className="text-gray-500">Cidade: {lead.cidade}</p>
+                                  </div>
+                                </div>
+
+                                {/* Coluna 2: Estimativas do Projeto */}
+                                <div className="space-y-2 border-r border-gray-100 pr-4">
+                                  <div className="flex items-center gap-1.5 font-bold text-gray-400 uppercase tracking-wider text-[9px]">
+                                    <svg className="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Orçamento & Área
+                                  </div>
+                                  <div className="pl-5.5 space-y-1">
+                                    <p className="text-gray-900 font-mono font-black text-sm">
+                                      R$ {lead.valor_estimado ? lead.valor_estimado.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+                                    </p>
+                                    <p className="text-gray-500 font-semibold">
+                                      Área Aquecida: {lead.area_m2 ? `${lead.area_m2} m²` : 'Não informada'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Coluna 3: Materiais Previstos */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-gray-400 uppercase tracking-wider text-[9px]">
+                                    <svg className="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    Materiais Planejados
+                                  </div>
+                                  <div className="pl-5.5 flex flex-wrap gap-1.5">
+                                    {!lead.materiais_previstos || lead.materiais_previstos.length === 0 ? (
+                                      <span className="text-gray-400 italic">Nenhum material planejado</span>
+                                    ) : (
+                                      lead.materiais_previstos.map((mat, i) => (
+                                        <span key={i} className="inline-block bg-orange-100 border border-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                          {mat}
+                                        </span>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Linha de Observações */}
+                                {lead.observacoes && (
+                                  <div className="col-span-1 md:col-span-3 pt-3 border-t border-gray-100/50 mt-1 space-y-1">
+                                    <div className="flex items-center gap-1.5 font-bold text-gray-400 uppercase tracking-wider text-[9px]">
+                                      <svg className="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                      </svg>
+                                      Observações / Requisitos
+                                    </div>
+                                    <p className="pl-5.5 text-gray-600 leading-relaxed font-semibold italic">
+                                      &ldquo;{lead.observacoes}&rdquo;
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -316,10 +475,10 @@ export default function LeadsDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={loadingAction || isCreating}
+                  disabled={loadingAction || isCreatingProject}
                   className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl font-black text-sm transition-all shadow-md shadow-orange-500/20 cursor-pointer flex items-center gap-2"
                 >
-                  {(loadingAction || isCreating) ? (
+                  {(loadingAction || isCreatingProject) ? (
                     <>
                       <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -333,6 +492,16 @@ export default function LeadsDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Cadastro Completo de Lead */}
+      {isAddLeadModalOpen && (
+        <ModalCadastroLead
+          isOpen={isAddLeadModalOpen}
+          onClose={() => setIsAddLeadModalOpen(false)}
+          onSave={handleSaveLead}
+          isSaving={isCreatingLead}
+        />
       )}
     </div>
   );

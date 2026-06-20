@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Visita } from '@/types/database.types';
 import { useResponsaveis } from '@/hooks/useResponsaveis';
 
@@ -26,32 +26,27 @@ export default function ModalPreenchimentoVisita({
   onDelete,
 }: ModalPreenchimentoVisitaProps) {
   const { responsaveis: dbResponsaveis } = useResponsaveis();
-  const [localVisita, setLocalVisita] = useState<Visita | null>(null);
+  const [localVisita, setLocalVisita] = useState<Visita>(() => ({ ...visita! }));
   const [materialInput, setMaterialInput] = useState('');
 
   const dateInputRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
+
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
   const MOCK_FALLBACK_TECNICOS = [
     { id: 't1', nome: 'Carlos Eduardo Silva' },
     { id: 't2', nome: 'Fernanda Lima Souza' },
     { id: 't3', nome: 'Rodrigo Medeiros' },
   ];
-  const responsaveis = dbResponsaveis.length > 0 ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
+  const responsaveis = isDbConfigured ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
 
-  useEffect(() => {
-    if (visita) {
-      setLocalVisita({ ...visita });
-    } else {
-      setLocalVisita(null);
-    }
-    setMaterialInput('');
-  }, [visita]);
+  if (!isOpen) return null;
 
-  if (!isOpen || !localVisita) return null;
-
-  const handleFieldChange = (field: keyof Visita, value: any) => {
-    setLocalVisita((prev) => (prev ? { ...prev, [field]: value } : null));
+  const handleFieldChange = <K extends keyof Visita>(field: K, value: Visita[K]) => {
+    setLocalVisita((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAddMaterial = (e: React.FormEvent) => {

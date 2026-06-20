@@ -10,11 +10,29 @@ export function useLeads() {
     queryFn: leadsService.getLeads,
   });
 
-  // Mutação para criar novos leads (utilizado na Landing Page)
+  // Mutação para criar novos leads (utilizado na Landing Page ou CRM)
   const createLeadMutation = useMutation({
     mutationFn: leadsService.createLead,
     onSuccess: () => {
       // Força a revalidação da query de leads
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    },
+  });
+
+  // Mutação para atualizar o status de um lead
+  const updateLeadStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: import('@/types/database.types').Lead['status'] }) =>
+      leadsService.updateLeadStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    },
+  });
+
+  // Mutação para atualizar um lead completo
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<import('@/types/database.types').Lead> }) =>
+      leadsService.updateLead(id, updates),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
   });
@@ -25,5 +43,9 @@ export function useLeads() {
     error: leadsQuery.error,
     createLead: createLeadMutation.mutateAsync,
     isCreating: createLeadMutation.isPending,
+    updateLeadStatus: updateLeadStatusMutation.mutateAsync,
+    isUpdatingStatus: updateLeadStatusMutation.isPending,
+    updateLead: updateLeadMutation.mutateAsync,
+    isUpdatingLead: updateLeadMutation.isPending,
   };
 }

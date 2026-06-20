@@ -14,6 +14,10 @@ export interface Lead {
   area_m2: number | null;
   status: 'Novo' | 'Em Contato' | 'Qualificado' | 'Perdido';
   criado_em: string;
+  endereco_obra?: string | null;
+  valor_estimado?: number | null;
+  materiais_previstos?: string[] | null;
+  observacoes?: string | null;
 }
 
 export interface Project {

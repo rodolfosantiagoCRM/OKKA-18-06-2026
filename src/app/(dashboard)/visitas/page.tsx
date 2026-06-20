@@ -688,22 +688,26 @@ export default function DashboardVisitas() {
         </div>
 
         {/* Modal de Edição */}
-        <ModalPreenchimentoVisita
-          isOpen={isModalOpen}
-          visita={selectedVisita}
-          onClose={handleCloseModal}
-          onSave={handleSaveReport}
-          isSaving={isUpdating}
-          onDelete={handleDeleteVisita}
-        />
+        {isModalOpen && selectedVisita && (
+          <ModalPreenchimentoVisita
+            isOpen={isModalOpen}
+            visita={selectedVisita}
+            onClose={handleCloseModal}
+            onSave={handleSaveReport}
+            isSaving={isUpdating}
+            onDelete={handleDeleteVisita}
+          />
+        )}
 
         {/* Modal de Agendamento */}
-        <ModalAgendamentoVisita
-          isOpen={isAgendarModalOpen}
-          onClose={() => setIsAgendarModalOpen(false)}
-          onSave={handleScheduleVisita}
-          isSaving={isCreating}
-        />
+        {isAgendarModalOpen && (
+          <ModalAgendamentoVisita
+            isOpen={isAgendarModalOpen}
+            onClose={() => setIsAgendarModalOpen(false)}
+            onSave={handleScheduleVisita}
+            isSaving={isCreating}
+          />
+        )}
       </div>
     </div>
   );

@@ -11,6 +11,11 @@ export const leadsService = {
     telefone: string;
     cidade: string;
     area_m2: number | null;
+    endereco_obra?: string | null;
+    valor_estimado?: number | null;
+    materiais_previstos?: string[] | null;
+    observacoes?: string | null;
+    status?: Lead['status'];
   }): Promise<Lead> {
     const { data, error } = await supabase
       .from('leads')
@@ -21,7 +26,11 @@ export const leadsService = {
           telefone: lead.telefone,
           cidade: lead.cidade,
           area_m2: lead.area_m2,
-          status: 'Novo',
+          endereco_obra: lead.endereco_obra || null,
+          valor_estimado: lead.valor_estimado || 0,
+          materiais_previstos: lead.materiais_previstos || [],
+          observacoes: lead.observacoes || null,
+          status: lead.status || 'Novo',
         },
       ])
       .select()
@@ -61,6 +70,23 @@ export const leadsService = {
 
     if (error) {
       throw new Error(error.message || 'Erro ao atualizar status do lead.');
+    }
+    return data;
+  },
+
+  /**
+   * Atualiza um lead por completo
+   */
+  async updateLead(id: string, updates: Partial<Lead>): Promise<Lead> {
+    const { data, error } = await supabase
+      .from('leads')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao atualizar o lead.');
     }
     return data;
   },
