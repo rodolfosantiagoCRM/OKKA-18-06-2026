@@ -8,7 +8,7 @@ export interface MaterialPredefinido {
   criado_em?: string;
 }
 
-export const FALLBACK_MATERIALS: MaterialPredefinido[] = [
+const FALLBACK_MATERIALS: MaterialPredefinido[] = [
   { id: 'm1', nome: 'Cabo Calefator 15W/m' },
   { id: 'm2', nome: 'Cabo Calefator 20W/m' },
   { id: 'm3', nome: 'Termostato Wifi Black' },
