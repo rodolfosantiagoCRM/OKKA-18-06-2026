@@ -60,7 +60,9 @@ export default function LoginPage() {
         let targetRoute = '/dashboard/instalador';
         const normalizedRole = userRole.toLowerCase();
 
-        if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
+        if (normalizedRole === 'super_admin') {
+          targetRoute = '/superadmin';
+        } else if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
           targetRoute = '/dashboard/mestre';
         } else if (normalizedRole === 'vendedor' || normalizedRole === 'tecnico') {
           targetRoute = '/dashboard/vendedor';
@@ -73,7 +75,13 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
+      // Tratar o erro {} do Supabase (objeto sem .message ou com mensagem vazia/inválida)
+      const rawMsg = err?.message;
+      const isEmptyMsg = !rawMsg || rawMsg === '{}' || rawMsg === 'undefined';
+      const displayMsg = isEmptyMsg
+        ? 'Credenciais inválidas. Verifique o e-mail e a senha e tente novamente.'
+        : rawMsg;
+      setErrorMsg(displayMsg);
     } finally {
       setLoading(false);
     }

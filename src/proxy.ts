@@ -82,6 +82,11 @@ export async function proxy(request: NextRequest) {
 
     // 4. Roteamento Inteligente e Restrições de Acesso
     
+    // Super Admin sempre vai para /superadmin
+    if (normalizedRole === 'super_admin') {
+      return NextResponse.redirect(new URL('/superadmin', request.url));
+    }
+
     // Se tentar acessar a raiz do dashboard (/dashboard), redireciona para a rota correta
     if (pathname === '/dashboard' || pathname === '/dashboard/') {
       return NextResponse.redirect(new URL(`/dashboard/${mappedRole}`, request.url));
