@@ -8,12 +8,24 @@ import { getMinhasPermissoesAbas, type PermissoesAbas } from '@/app/actions/usua
 
 const getStaticPermissions = (roleName: string | null): PermissoesAbas => {
   const r = roleName || 'admin';
+  if (r === 'tecnico' || r === 'instalador') {
+    return {
+      role: r,
+      dashboard: false,
+      leads: false,
+      visitas: true,
+      projetos: false,
+      equipe: false,
+      eficiencia: false,
+      configuracoes: false,
+    };
+  }
   return {
     role: r,
-    dashboard: r !== 'instalador',
+    dashboard: true,
     leads: r === 'admin' || r === 'mestre',
     visitas: true,
-    projetos: r === 'admin' || r === 'mestre' || r === 'tecnico' || r === 'vendedor',
+    projetos: r === 'admin' || r === 'mestre' || r === 'vendedor',
     equipe: r === 'admin' || r === 'mestre',
     eficiencia: r === 'admin' || r === 'mestre',
     configuracoes: r === 'admin' || r === 'mestre',

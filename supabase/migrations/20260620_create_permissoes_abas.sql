@@ -36,12 +36,11 @@ CREATE POLICY "Apenas gestores alteram abas"
     (auth.jwt() -> 'user_metadata' ->> 'role') = 'mestre'
   );
 
--- 4. Semear (Seed) valores padrão para as 5 roles do sistema
 INSERT INTO public.permissoes_abas (role, dashboard, leads, visitas, projetos, equipe, eficiencia) VALUES
   ('admin', true, true, true, true, true, true),
   ('mestre', true, true, true, true, true, true),
   ('vendedor', true, true, true, true, false, false),
-  ('tecnico', true, true, true, true, false, false),
+  ('tecnico', false, false, true, false, false, false),
   ('instalador', false, false, true, false, false, false)
 ON CONFLICT (role) DO UPDATE SET
   dashboard = EXCLUDED.dashboard,
