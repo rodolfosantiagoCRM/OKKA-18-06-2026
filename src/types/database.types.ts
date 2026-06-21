@@ -80,3 +80,22 @@ export interface WhatsappConfig {
   updated_at: string;
 }
 
+export interface PlanoSaaS {
+  id: string;
+  nome: string;
+  valor: number;
+  mp_plan_id: string;
+  criado_em: string;
+}
+
+export interface Fatura {
+  id: string;
+  empresa_id: string;
+  valor: number;
+  data_vencimento: string;
+  status: 'Pendente' | 'Paga' | 'Falhou';
+  mp_payment_id: string | null;
+  criado_em: string;
+}
+
+

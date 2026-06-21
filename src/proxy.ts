@@ -35,33 +35,59 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
-    // 3. Buscar perfil na tabela 'perfis' ou 'perfis_usuarios'
+    // 3. Buscar perfil na tabela 'perfis_usuarios' para obter a role e o empresa_id
     let role = user.user_metadata?.role || '';
+    let empresaId = user.user_metadata?.empresa_id || '';
 
-    if (!role) {
-      const { data: perfil, error: errPerfil } = await supabase
-        .from('perfis')
-        .select('role')
-        .eq('id', user.id)
+    const { data: perfilUsuario, error: errPerfilUsuario } = await supabase
+      .from('perfis_usuarios')
+      .select('role, empresa_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!errPerfilUsuario && perfilUsuario) {
+      if (perfilUsuario.role) role = perfilUsuario.role;
+      if (perfilUsuario.empresa_id) empresaId = perfilUsuario.empresa_id;
+    }
+
+    const normalizedRole = (role || 'instalador').toLowerCase();
+
+    // 3.1. Bypass total para Super Admin (nunca é bloqueado)
+    if (normalizedRole === 'super_admin') {
+      if (pathname.startsWith('/superadmin')) {
+        return NextResponse.next();
+      }
+      return NextResponse.redirect(new URL('/superadmin', request.url));
+    }
+
+    // 3.2. Verificar status da assinatura para outras contas
+    if (empresaId) {
+      const { data: empresa, error: errEmpresa } = await supabase
+        .from('empresas')
+        .select('status_assinatura')
+        .eq('id', empresaId)
         .single();
 
-      if (!errPerfil && perfil?.role) {
-        role = perfil.role;
-      } else {
-        const { data: perfilUsuario, error: errPerfilUsuario } = await supabase
-          .from('perfis_usuarios')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+      if (!errEmpresa && empresa) {
+        const status = empresa.status_assinatura;
+        const isBlocked = status === 'inadimplente' || status === 'cancelada';
 
-        if (!errPerfilUsuario && perfilUsuario?.role) {
-          role = perfilUsuario.role;
+        if (isBlocked) {
+          if (normalizedRole === 'vendedor' || normalizedRole === 'instalador' || normalizedRole === 'tecnico') {
+            console.log(`[Proxy] Empresa inadimplente/bloqueada. Redirecionando funcionário ${user.email} para /acesso-suspenso`);
+            return NextResponse.redirect(new URL('/acesso-suspenso', request.url));
+          }
+
+          if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
+            const allowedPath = '/dashboard/mestre/configuracoes/assinatura';
+            if (pathname !== allowedPath) {
+              console.log(`[Proxy] Empresa inadimplente/bloqueada. Redirecionando mestre ${user.email} para tela de assinatura`);
+              return NextResponse.redirect(new URL(`${allowedPath}?pendente=true`, request.url));
+            }
+          }
         }
       }
     }
-
-    // Mapear role para compatibilidade com novos e antigos termos
-    const normalizedRole = (role || 'instalador').toLowerCase();
 
     // 3.5. Proteção rígida da rota /superadmin
     if (pathname.startsWith('/superadmin')) {
@@ -74,7 +100,7 @@ export async function proxy(request: NextRequest) {
 
     let mappedRole: 'mestre' | 'vendedor' | 'instalador' = 'instalador';
 
-    if (normalizedRole === 'mestre' || normalizedRole === 'admin' || normalizedRole === 'super_admin') {
+    if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
       mappedRole = 'mestre';
     } else if (normalizedRole === 'vendedor') {
       mappedRole = 'vendedor';

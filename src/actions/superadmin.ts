@@ -346,3 +346,32 @@ export async function atualizarEmpresa(empresaId: string, dados: AtualizarEmpres
     return { success: false, error: err.message || 'Erro inesperado ao atualizar a empresa.' };
   }
 }
+
+/**
+ * Alterna manualmente o status da assinatura de uma empresa para bloqueio/desbloqueio.
+ */
+export async function alternarBloqueioEmpresa(
+  empresaId: string,
+  novoStatus: 'ativa' | 'inadimplente' | 'cancelada'
+) {
+  try {
+    const supabaseAdmin = createServerClient();
+    await checkSuperAdminPermission(supabaseAdmin);
+
+    const { error } = await supabaseAdmin
+      .from('empresas')
+      .update({ status_assinatura: novoStatus })
+      .eq('id', empresaId);
+
+    if (error) {
+      console.error('Erro ao alternar bloqueio da empresa:', error);
+      return { success: false, error: error.message || 'Erro ao alterar status da assinatura.' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Erro no alternarBloqueioEmpresa:', err);
+    return { success: false, error: err.message || 'Erro inesperado ao alternar bloqueio.' };
+  }
+}
+

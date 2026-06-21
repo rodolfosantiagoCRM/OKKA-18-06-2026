@@ -6,7 +6,8 @@ import {
   criarEmpresaECliente, 
   atualizarSenhaUsuario, 
   alterarStatusAssinatura,
-  atualizarEmpresa
+  atualizarEmpresa,
+  alternarBloqueioEmpresa
 } from '@/actions/superadmin';
 import { supabase } from '@/lib/supabase';
 
@@ -498,21 +499,42 @@ export default function SuperAdminDashboard() {
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                           emp.status_assinatura === 'ativa'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : emp.status_assinatura === 'inadimplente'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                            : 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
                             emp.status_assinatura === 'ativa'
                               ? 'bg-emerald-400'
-                              : emp.status_assinatura === 'inadimplente'
-                              ? 'bg-amber-400'
-                              : 'bg-rose-400'
+                              : 'bg-rose-500'
                           }`} />
-                          {emp.status_assinatura}
+                          {emp.status_assinatura === 'ativa' ? 'Ativo' : 'Não Pago / Bloqueado'}
                         </span>
                       </td>
                       <td className="py-4 px-5 text-right space-x-2">
+                        <button
+                          onClick={async () => {
+                            const isCurrentlyBlocked = emp.status_assinatura === 'inadimplente' || emp.status_assinatura === 'cancelada';
+                            const newStatus = isCurrentlyBlocked ? 'ativa' : 'inadimplente';
+                            try {
+                              const res = await alternarBloqueioEmpresa(emp.id, newStatus);
+                              if (res.success) {
+                                setSuccessMsg(`Acesso da empresa "${emp.nome_fantasia}" ${isCurrentlyBlocked ? 'liberado' : 'bloqueado'} com sucesso!`);
+                                loadData();
+                              } else {
+                                setError(res.error || 'Erro ao alterar status de acesso.');
+                              }
+                            } catch (err: any) {
+                              setError(err.message || 'Erro de conexão.');
+                            }
+                          }}
+                          className={`py-1.5 px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
+                            emp.status_assinatura === 'inadimplente' || emp.status_assinatura === 'cancelada'
+                              ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20'
+                              : 'bg-slate-900 border-slate-800 hover:border-rose-500/40 text-slate-300 hover:text-rose-400'
+                          }`}
+                        >
+                          {emp.status_assinatura === 'inadimplente' || emp.status_assinatura === 'cancelada' ? 'Desbloquear Acesso' : 'Bloquear Acesso'}
+                        </button>
+
                         <button
                           onClick={() => {
                             setSelectedEmpresa(emp);
