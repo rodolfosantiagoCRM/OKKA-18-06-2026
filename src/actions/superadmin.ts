@@ -296,3 +296,53 @@ export async function getSaaSEmpresas() {
     return { success: false, error: err.message || 'Erro inesperado ao listar empresas.' };
   }
 }
+
+interface AtualizarEmpresaParams {
+  nome_fantasia: string;
+  cnpj: string;
+}
+
+/**
+ * Atualiza os dados cadastrais de uma empresa (nome fantasia e CNPJ).
+ */
+export async function atualizarEmpresa(empresaId: string, dados: AtualizarEmpresaParams) {
+  try {
+    const supabaseAdmin = createServerClient();
+    await checkSuperAdminPermission(supabaseAdmin);
+
+    if (!dados.nome_fantasia.trim()) return { success: false, error: 'O nome fantasia é obrigatório.' };
+    if (!dados.cnpj.trim()) return { success: false, error: 'O CNPJ é obrigatório.' };
+
+    const cnpjFormatado = dados.cnpj.replace(/\D/g, '');
+
+    // Verificar se outro cadastro já possui esse CNPJ
+    const { data: cnpjExists } = await supabaseAdmin
+      .from('empresas')
+      .select('id')
+      .eq('cnpj', cnpjFormatado)
+      .neq('id', empresaId)
+      .maybeSingle();
+
+    if (cnpjExists) {
+      return { success: false, error: 'Este CNPJ já está cadastrado em outra empresa.' };
+    }
+
+    const { error } = await supabaseAdmin
+      .from('empresas')
+      .update({
+        nome_fantasia: dados.nome_fantasia.trim(),
+        cnpj: cnpjFormatado,
+      })
+      .eq('id', empresaId);
+
+    if (error) {
+      console.error('Erro ao atualizar empresa:', error);
+      return { success: false, error: error.message || 'Erro ao atualizar dados da empresa.' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Erro no atualizarEmpresa:', err);
+    return { success: false, error: err.message || 'Erro inesperado ao atualizar a empresa.' };
+  }
+}

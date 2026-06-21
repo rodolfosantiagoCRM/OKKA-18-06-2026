@@ -5,7 +5,8 @@ import {
   getSaaSEmpresas, 
   criarEmpresaECliente, 
   atualizarSenhaUsuario, 
-  alterarStatusAssinatura 
+  alterarStatusAssinatura,
+  atualizarEmpresa
 } from '@/actions/superadmin';
 import { supabase } from '@/lib/supabase';
 
@@ -37,6 +38,11 @@ export default function SuperAdminDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Estados de Senha (olho)
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // Estados de Operação
   const [selectedEmpresa, setSelectedEmpresa] = useState<EmpresaMetric | null>(null);
@@ -54,6 +60,13 @@ export default function SuperAdminDashboard() {
   // Form de Reset de Senha
   const [newPassword, setNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Form de Edição de Empresa
+  const [editCompanyForm, setEditCompanyForm] = useState({
+    nome_fantasia: '',
+    cnpj: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   // Form de Alteração de Status
   const [statusLoading, setStatusLoading] = useState(false);
@@ -149,6 +162,30 @@ export default function SuperAdminDashboard() {
       setError(err.message || 'Erro inesperado.');
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  // Editar Empresa
+  const handleEditCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmpresa) return;
+    setEditLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await atualizarEmpresa(selectedEmpresa.id, editCompanyForm);
+      if (res.success) {
+        setSuccessMsg(`Dados da empresa "${editCompanyForm.nome_fantasia}" atualizados com sucesso!`);
+        setIsEditModalOpen(false);
+        loadData();
+      } else {
+        setError(res.error || 'Erro ao atualizar dados da empresa.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro inesperado.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -477,6 +514,20 @@ export default function SuperAdminDashboard() {
                         <button
                           onClick={() => {
                             setSelectedEmpresa(emp);
+                            setEditCompanyForm({
+                              nome_fantasia: emp.nome_fantasia,
+                              cnpj: emp.cnpj
+                            });
+                            setIsEditModalOpen(true);
+                          }}
+                          className="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSelectedEmpresa(emp);
                             setIsStatusModalOpen(true);
                           }}
                           className="bg-slate-900 border border-slate-800 hover:border-violet-500/40 text-slate-300 hover:text-violet-400 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer"
@@ -586,13 +637,31 @@ export default function SuperAdminDashboard() {
               {/* Senha */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Senha Provisória</label>
-                <input
-                  type="password"
-                  placeholder="Padrão: OkkaMestre2026! (Opcional)"
-                  value={newCompanyForm.password}
-                  onChange={(e) => setNewCompanyForm({...newCompanyForm, password: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 px-4 text-xs outline-none text-slate-200 placeholder:text-slate-650"
-                />
+                <div className="relative">
+                  <input
+                    type={showCreatePassword ? "text" : "password"}
+                    placeholder="Padrão: OkkaMestre2026! (Opcional)"
+                    value={newCompanyForm.password}
+                    onChange={(e) => setNewCompanyForm({...newCompanyForm, password: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 pl-4 pr-10 text-xs outline-none text-slate-200 placeholder:text-slate-650"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCreatePassword(!showCreatePassword)}
+                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer p-1"
+                  >
+                    {showCreatePassword ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-850 flex items-center justify-end gap-3">
@@ -650,15 +719,33 @@ export default function SuperAdminDashboard() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nova Senha</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder="Minimo 6 caracteres"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 px-4 text-xs outline-none text-slate-200 placeholder:text-slate-600"
-                />
+                <div className="relative">
+                  <input
+                    type={showResetPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    placeholder="Minimo 6 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 pl-4 pr-10 text-xs outline-none text-slate-200 placeholder:text-slate-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer p-1"
+                  >
+                    {showResetPassword ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-850 flex items-center justify-end gap-3">
@@ -768,6 +855,77 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: EDITAR DADOS DA EMPRESA
+          ========================================================================= */}
+      {isEditModalOpen && selectedEmpresa && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-850 w-full max-w-md rounded-2xl shadow-2xl relative overflow-hidden animate-slide-up">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/5 rounded-bl-full pointer-events-none" />
+            
+            <div className="p-6 border-b border-slate-850 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold">Editar Dados da Empresa</h3>
+                <p className="text-slate-400 text-xs mt-0.5">Atualiza o nome fantasia e o CNPJ da empresa.</p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleEditCompany} className="p-6 space-y-4">
+              {/* Nome Fantasia */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Nome Fantasia da Empresa</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Construtora Alfa Ltda"
+                  value={editCompanyForm.nome_fantasia}
+                  onChange={(e) => setEditCompanyForm({...editCompanyForm, nome_fantasia: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 px-4 text-xs outline-none text-slate-200 placeholder:text-slate-655"
+                />
+              </div>
+
+              {/* CNPJ */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">CNPJ</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Apenas números ou formato CNPJ"
+                  value={editCompanyForm.cnpj}
+                  onChange={(e) => setEditCompanyForm({...editCompanyForm, cnpj: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2.5 px-4 text-xs outline-none text-slate-200 placeholder:text-slate-655"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-850 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="bg-transparent hover:bg-slate-850 text-slate-400 hover:text-slate-100 py-2 px-4 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-2 px-5 rounded-xl text-xs font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {editLoading ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
