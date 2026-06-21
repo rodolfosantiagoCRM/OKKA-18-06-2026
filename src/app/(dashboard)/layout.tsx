@@ -263,10 +263,10 @@ export default function DashboardLayout({
           },
         ]
       : []),
-    ...(permissions.configuracoes
+    ...(role === 'mestre' || role === 'admin' || permissions.role === 'mestre' || permissions.role === 'admin' || permissions.equipe
       ? [
           {
-            href: '/configuracoes',
+            href: '/dashboard/mestre/configuracoes/assinatura',
             label: 'Configurações',
             icon: (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
