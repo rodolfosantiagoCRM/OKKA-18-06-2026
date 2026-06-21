@@ -76,8 +76,10 @@ export async function proxy(request: NextRequest) {
 
     if (normalizedRole === 'mestre' || normalizedRole === 'admin' || normalizedRole === 'super_admin') {
       mappedRole = 'mestre';
-    } else if (normalizedRole === 'vendedor' || normalizedRole === 'tecnico') {
+    } else if (normalizedRole === 'vendedor') {
       mappedRole = 'vendedor';
+    } else if (normalizedRole === 'tecnico' || normalizedRole === 'instalador') {
+      mappedRole = 'instalador';
     }
 
     // 4. Roteamento Inteligente e Restrições de Acesso
@@ -85,6 +87,13 @@ export async function proxy(request: NextRequest) {
     // Super Admin sempre vai para /superadmin
     if (normalizedRole === 'super_admin') {
       return NextResponse.redirect(new URL('/superadmin', request.url));
+    }
+
+    // Instalador e Técnico Operacional só acessam Visitas Técnicas (não possuem nenhuma página de dashboard)
+    if (normalizedRole === 'instalador' || normalizedRole === 'tecnico') {
+      if (pathname === '/dashboard' || pathname === '/dashboard/' || pathname.startsWith('/dashboard/')) {
+        return NextResponse.redirect(new URL('/visitas', request.url));
+      }
     }
 
     // Se tentar acessar a raiz do dashboard (/dashboard), redireciona para a rota correta
@@ -95,13 +104,13 @@ export async function proxy(request: NextRequest) {
     // Restrição para Instaladores: não acessam painéis de mestre ou vendedor
     if (mappedRole === 'instalador') {
       if (pathname.startsWith('/dashboard/mestre') || pathname.startsWith('/dashboard/vendedor')) {
-        return NextResponse.redirect(new URL('/dashboard/instalador', request.url));
+        return NextResponse.redirect(new URL('/visitas', request.url));
       }
     }
 
-    // Restrição para Vendedores: não acessam painel mestre
+    // Restrição para Vendedores: não acessam painel mestre nem instalador
     if (mappedRole === 'vendedor') {
-      if (pathname.startsWith('/dashboard/mestre')) {
+      if (pathname.startsWith('/dashboard/mestre') || pathname.startsWith('/dashboard/instalador')) {
         return NextResponse.redirect(new URL('/dashboard/vendedor', request.url));
       }
     }

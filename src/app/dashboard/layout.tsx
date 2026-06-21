@@ -269,7 +269,7 @@ export default function DashboardLayout({
         <aside className="w-full md:w-64 bg-white border-r border-gray-200/80 shadow-sm flex flex-col justify-between shrink-0">
           <div className="p-6 space-y-8">
             {/* Logo */}
-            <a href="/dashboard" className="flex items-center gap-2.5 group">
+            <a href={permissions.dashboard ? "/dashboard" : "/visitas"} className="flex items-center gap-2.5 group">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#E25B3C] to-amber-600 flex items-center justify-center shadow-md shadow-orange-500/30">
                 <span className="text-white font-black text-sm tracking-tight">O</span>
               </div>
