@@ -18,6 +18,7 @@ export interface Lead {
   valor_estimado?: number | null;
   materiais_previstos?: string[] | null;
   observacoes?: string | null;
+  cep?: string | null;
 }
 
 export interface Project {

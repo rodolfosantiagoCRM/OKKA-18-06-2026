@@ -24,6 +24,7 @@ interface ModalCadastroLeadProps {
     materiais_previstos?: string[] | null;
     observacoes?: string | null;
     status: Lead['status'];
+    cep?: string | null;
   }) => Promise<void>;
   isSaving: boolean;
   leadToEdit?: Lead | null;
@@ -48,6 +49,8 @@ export default function ModalCadastroLead({
   const [valorEstimado, setValorEstimado] = useState('15000');
   const [materiaisPrevistos, setMateriaisPrevistos] = useState<string[]>([]);
   const [observacoes, setObservacoes] = useState('');
+  const [cep, setCep] = useState('');
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
 
   // Estados de Materiais Dinâmicos
   const [materialOptions, setMaterialOptions] = useState<MaterialPredefinido[]>([]);
@@ -74,6 +77,7 @@ export default function ModalCadastroLead({
         setValorEstimado(leadToEdit.valor_estimado ? String(leadToEdit.valor_estimado) : '');
         setMateriaisPrevistos(leadToEdit.materiais_previstos || []);
         setObservacoes(leadToEdit.observacoes || '');
+        setCep(leadToEdit.cep || '');
       } else {
         setNome('');
         setEmail('');
@@ -85,10 +89,43 @@ export default function ModalCadastroLead({
         setValorEstimado('15000');
         setMateriaisPrevistos([]);
         setObservacoes('');
+        setCep('');
       }
       setErrorMessage('');
     }
   }, [isOpen, leadToEdit]);
+
+  const handleCepChange = async (value: string) => {
+    const cleanValue = value.replace(/\D/g, '');
+    const truncatedValue = cleanValue.slice(0, 8);
+    let masked = truncatedValue;
+    if (truncatedValue.length > 5) {
+      masked = `${truncatedValue.slice(0, 5)}-${truncatedValue.slice(5)}`;
+    }
+    setCep(masked);
+
+    if (truncatedValue.length === 8) {
+      setIsSearchingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${truncatedValue}/json/`);
+        const data = await response.json();
+        if (data && !data.erro) {
+          if (data.localidade) {
+            setCidade(data.localidade);
+          }
+          if (data.logradouro) {
+            const rua = data.logradouro;
+            const bairro = data.bairro ? `, ${data.bairro}` : '';
+            setEnderecoObra(`${rua}${bairro}`);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar CEP:', err);
+      } finally {
+        setIsSearchingCep(false);
+      }
+    }
+  };
 
   // Carregar materiais na abertura do modal
   useEffect(() => {
@@ -203,6 +240,7 @@ export default function ModalCadastroLead({
         materiais_previstos: materiaisPrevistos,
         observacoes: observacoes.trim() || null,
         status,
+        cep: cep.trim() || null,
       });
       onClose();
     } catch (err: unknown) {
@@ -331,16 +369,40 @@ export default function ModalCadastroLead({
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="endereco_obra" className={labelClass}>Endereço Completo da Obra</label>
-                  <input
-                    type="text"
-                    id="endereco_obra"
-                    placeholder="Ex: Rua das Palmeiras, 405 - Condomínio Royal"
-                    value={enderecoObra}
-                    onChange={(e) => setEnderecoObra(e.target.value)}
-                    className={inputClass}
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5 sm:col-span-1">
+                    <label htmlFor="cep" className={labelClass}>CEP</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="cep"
+                        placeholder="Ex: 80240-030"
+                        value={cep}
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        className={inputClass}
+                      />
+                      {isSearchingCep && (
+                        <div className="absolute right-3 top-2.5">
+                          <svg className="animate-spin h-4.5 w-4.5 text-orange-500" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label htmlFor="endereco_obra" className={labelClass}>Endereço Completo da Obra</label>
+                    <input
+                      type="text"
+                      id="endereco_obra"
+                      placeholder="Ex: Rua das Palmeiras, 405 - Condomínio Royal"
+                      value={enderecoObra}
+                      onChange={(e) => setEnderecoObra(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

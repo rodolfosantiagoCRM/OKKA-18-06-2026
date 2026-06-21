@@ -16,6 +16,7 @@ export const leadsService = {
     materiais_previstos?: string[] | null;
     observacoes?: string | null;
     status?: Lead['status'];
+    cep?: string | null;
   }): Promise<Lead> {
     const { data, error } = await supabase
       .from('leads')
@@ -31,6 +32,7 @@ export const leadsService = {
           materiais_previstos: lead.materiais_previstos || [],
           observacoes: lead.observacoes || null,
           status: lead.status || 'Novo',
+          cep: lead.cep || null,
         },
       ])
       .select()

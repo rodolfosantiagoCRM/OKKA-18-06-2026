@@ -7,12 +7,12 @@ import { Lead } from '@/types/database.types';
 import ModalCadastroLead from '@/components/crm/modal-cadastro-lead';
 
 const MOCK_FALLBACK_LEADS: Lead[] = [
-  { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T14:30:00Z' },
-  { id: 'l2', nome: 'Clarice Lispector', email: 'clarice@email.com', telefone: '(41) 99999-2222', cidade: 'Curitiba', area_m2: 45, status: 'Novo', criado_em: '2026-06-11T09:15:00Z' },
-  { id: 'l3', nome: 'Julio Cortázar', email: 'julio@email.com', telefone: '(41) 99999-3333', cidade: 'Curitiba', area_m2: 110, status: 'Em Contato', criado_em: '2026-06-14T11:00:00Z' },
-  { id: 'l4', nome: 'Gabriel García Márquez', email: 'gabriel@email.com', telefone: '(41) 99999-4444', cidade: 'Curitiba', area_m2: 60, status: 'Novo', criado_em: '2026-06-15T16:20:00Z' },
-  { id: 'l5', nome: 'Jorge Luis Borges', email: 'borges@email.com', telefone: '(11) 98888-5555', cidade: 'São Paulo', area_m2: 150, status: 'Perdido', criado_em: '2026-06-05T10:00:00Z' },
-  { id: 'l6', nome: 'Machado de Assis', email: 'machado@email.com', telefone: '(21) 97777-6666', cidade: 'Rio de Janeiro', area_m2: 95, status: 'Novo', criado_em: '2026-06-16T18:45:00Z' },
+  { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T14:30:00Z', cep: '80240-031' },
+  { id: 'l2', nome: 'Clarice Lispector', email: 'clarice@email.com', telefone: '(41) 99999-2222', cidade: 'Curitiba', area_m2: 45, status: 'Novo', criado_em: '2026-06-11T09:15:00Z', cep: '80240-032' },
+  { id: 'l3', nome: 'Julio Cortázar', email: 'julio@email.com', telefone: '(41) 99999-3333', cidade: 'Curitiba', area_m2: 110, status: 'Em Contato', criado_em: '2026-06-14T11:00:00Z', cep: '80240-033' },
+  { id: 'l4', nome: 'Gabriel García Márquez', email: 'gabriel@email.com', telefone: '(41) 99999-4444', cidade: 'Curitiba', area_m2: 60, status: 'Novo', criado_em: '2026-06-15T16:20:00Z', cep: '80240-034' },
+  { id: 'l5', nome: 'Jorge Luis Borges', email: 'borges@email.com', telefone: '(11) 98888-5555', cidade: 'São Paulo', area_m2: 150, status: 'Perdido', criado_em: '2026-06-05T10:00:00Z', cep: '01310-200' },
+  { id: 'l6', nome: 'Machado de Assis', email: 'machado@email.com', telefone: '(21) 97777-6666', cidade: 'Rio de Janeiro', area_m2: 95, status: 'Novo', criado_em: '2026-06-16T18:45:00Z', cep: '22041-011' },
 ];
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; dot: string }> = {
@@ -133,6 +133,7 @@ export default function LeadsDashboard() {
     materiais_previstos?: string[] | null;
     observacoes?: string | null;
     status: Lead['status'];
+    cep?: string | null;
   }) => {
     try {
       if (leadToEdit) {
@@ -170,6 +171,7 @@ export default function LeadsDashboard() {
             valor_estimado: leadData.valor_estimado,
             materiais_previstos: leadData.materiais_previstos,
             observacoes: leadData.observacoes,
+            cep: leadData.cep,
           };
           setLocalLeadsFallback((prev) => [newRecord, ...prev]);
         }
