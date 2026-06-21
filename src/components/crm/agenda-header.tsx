@@ -6,6 +6,7 @@ interface AgendaHeaderProps {
   statusFilter: string;
   setStatusFilter: (val: string) => void;
   onAgendarClick: () => void;
+  atrasadasCount?: number;
 }
 
 export default function AgendaHeader({
@@ -14,6 +15,7 @@ export default function AgendaHeader({
   statusFilter,
   setStatusFilter,
   onAgendarClick,
+  atrasadasCount = 0,
 }: AgendaHeaderProps) {
   return (
     <div className="space-y-7">
@@ -55,17 +57,23 @@ export default function AgendaHeader({
         </div>
 
         <div className="flex gap-1.5 p-1.5 bg-gray-100 rounded-xl w-full md:w-auto overflow-x-auto">
-          {['Todas', 'Agendada', 'Realizada', 'Cancelada'].map((status) => (
+          {[
+            { id: 'Todas', label: 'Todas' },
+            { id: 'Agendada', label: 'Agendadas' },
+            { id: 'Atrasada', label: `Atrasadas (${atrasadasCount})` },
+            { id: 'Realizada', label: 'Realizadas' },
+            { id: 'Cancelada', label: 'Canceladas' }
+          ].map((tab) => (
             <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
               className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap cursor-pointer transition-all ${
-                statusFilter === status
+                statusFilter === tab.id
                   ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/20'
                   : 'text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              {status}
+              {tab.label}
             </button>
           ))}
         </div>

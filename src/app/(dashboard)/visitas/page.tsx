@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useVisitas } from '@/hooks/useVisitas';
 import AgendaHeader from '@/components/crm/agenda-header';
 import ModalPreenchimentoVisita from '@/components/crm/modal-preenchimento-visita';
@@ -383,10 +383,13 @@ export default function DashboardVisitas() {
   };
 
   // Helper de filtragem para aplicar os filtros globais (busca e status)
-  const applyFilters = (list: Visita[]) => {
+  const applyFilters = useCallback((list: Visita[]) => {
     return list.filter((v) => {
       // Filtro por Status
-      if (statusFilter !== 'Todas' && v.status_visita !== statusFilter) {
+      if (statusFilter === 'Atrasada') {
+        const isAtrasada = v.status_visita === 'Agendada' && v.data_visita < hojeStr;
+        if (!isAtrasada) return false;
+      } else if (statusFilter !== 'Todas' && v.status_visita !== statusFilter) {
         return false;
       }
       // Filtro por termo de busca
@@ -403,13 +406,26 @@ export default function DashboardVisitas() {
       }
       return true;
     });
-  };
+  }, [statusFilter, searchTerm, hojeStr]);
 
   // Filtrar os grupos separadamente para preservar o design das colunas
-  const atrasadasFiltered = useMemo(() => applyFilters(activeAtrasadas), [activeAtrasadas, searchTerm, statusFilter]);
-  const hojeFiltered = useMemo(() => applyFilters(activeHoje), [activeHoje, searchTerm, statusFilter]);
-  const amanhaFiltered = useMemo(() => applyFilters(activeAmanha), [activeAmanha, searchTerm, statusFilter]);
-  const proximasFiltered = useMemo(() => applyFilters(activeProximas), [activeProximas, searchTerm, statusFilter]);
+  const atrasadasFiltered = useMemo(() => applyFilters(activeAtrasadas), [activeAtrasadas, applyFilters]);
+  const hojeFiltered = useMemo(() => applyFilters(activeHoje), [activeHoje, applyFilters]);
+  const amanhaFiltered = useMemo(() => applyFilters(activeAmanha), [activeAmanha, applyFilters]);
+  const proximasFiltered = useMemo(() => applyFilters(activeProximas), [activeProximas, applyFilters]);
+
+  const showDateColumns = statusFilter === 'Todas' || statusFilter === 'Agendada';
+
+  const unifiedFilteredVisitas = useMemo(() => {
+    if (showDateColumns) return [];
+    const filtered = applyFilters(activeRaw);
+    return [...filtered].sort((a, b) => {
+      if (a.data_visita !== b.data_visita) {
+        return b.data_visita.localeCompare(a.data_visita);
+      }
+      return b.horario.localeCompare(a.horario);
+    });
+  }, [showDateColumns, applyFilters, activeRaw]);
 
   // Agrupar as próximas visitas por data
   const proximasGroupedByDate = useMemo(() => {
@@ -461,6 +477,7 @@ export default function DashboardVisitas() {
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
           onAgendarClick={() => setIsAgendarModalOpen(true)}
+          atrasadasCount={activeAtrasadas.length}
         />
 
         {/* Toast de Feedback */}
@@ -482,7 +499,7 @@ export default function DashboardVisitas() {
         )}
 
         {/* 1. Painel de Visitas em Atraso */}
-        {atrasadasFiltered.length > 0 && (
+        {showDateColumns && atrasadasFiltered.length > 0 && (
           <div className="bg-white border border-rose-200 rounded-2xl shadow-sm overflow-hidden">
             {/* Cabeçalho do Painel */}
             <div className="flex items-center justify-between px-5 py-4 bg-rose-50 border-b border-rose-100">
@@ -621,105 +638,151 @@ export default function DashboardVisitas() {
           </div>
         )}
 
-        {/* 2. Grid de Agendamento (Hoje e Amanhã) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Coluna 1: Hoje */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+        {!showDateColumns ? (
+          <div className="bg-white border border-gray-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Hoje</span>
-                </div>
-                <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
-                  Hoje, <span className="text-orange-500">{getFormattedHeaderDate(hojeStr)}</span>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  statusFilter === 'Realizada' ? 'bg-emerald-500' :
+                  statusFilter === 'Cancelada' ? 'bg-rose-500' :
+                  'bg-rose-600 animate-pulse'
+                }`} />
+                <h2 className="text-xl font-black text-gray-900">
+                  {statusFilter === 'Realizada' ? 'Visitas Realizadas' :
+                   statusFilter === 'Cancelada' ? 'Visitas Canceladas' :
+                   'Visitas em Atraso'}
                 </h2>
               </div>
-              <span className="text-[10px] font-black bg-orange-50 border border-orange-200 text-orange-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {hojeFiltered.length} {hojeFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
+              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                statusFilter === 'Realizada' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                statusFilter === 'Cancelada' ? 'bg-rose-50 border-rose-200 text-rose-600' :
+                'bg-rose-50 border-rose-200 text-rose-600'
+              }`}>
+                {unifiedFilteredVisitas.length} {unifiedFilteredVisitas.length === 1 ? 'visita' : 'visitas'}
               </span>
             </div>
 
-            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-              {hojeFiltered.length === 0 ? (
+            <div className="space-y-3">
+              {unifiedFilteredVisitas.length === 0 ? (
                 <div className="text-center py-12 text-gray-400 italic text-sm">
-                  Nenhuma visita agendada para hoje.
+                  Nenhuma visita encontrada com este status.
                 </div>
               ) : (
-                hojeFiltered.map((v) => (
-                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                unifiedFilteredVisitas.map((v) => (
+                  <VisitaCard
+                    key={v.id}
+                    visita={v}
+                    onOpenModal={handleOpenModal}
+                    onDelete={handleDeleteVisita}
+                    showDate={true}
+                  />
                 ))
               )}
             </div>
           </div>
-
-          {/* Coluna 2: Amanhã */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Amanhã</span>
-                </div>
-                <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
-                  Amanhã, <span className="text-blue-500">{getFormattedHeaderDate(amanhaStr)}</span>
-                </h2>
-              </div>
-              <span className="text-[10px] font-black bg-blue-50 border border-blue-200 text-blue-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {amanhaFiltered.length} {amanhaFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-              {amanhaFiltered.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 italic text-sm">
-                  Nenhuma visita agendada para amanhã.
-                </div>
-              ) : (
-                amanhaFiltered.map((v) => (
-                  <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Lista de Próximas */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-50">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <h2 className="text-base font-black text-gray-900">Cronograma de Próximas Visitas</h2>
-            </div>
-            <span className="text-[10px] font-black bg-purple-50 border border-purple-200 text-purple-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {proximasFiltered.length} {proximasFiltered.length === 1 ? 'Visita' : 'Visitas'}
-            </span>
-          </div>
-
-          <div className="space-y-6">
-            {proximasGroupedByDate.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 italic text-sm">
-                Nenhuma outra visita futura agendada.
-              </div>
-            ) : (
-              proximasGroupedByDate.map((group) => (
-                <div key={group.date} className="space-y-3">
-                  <div className="flex items-center gap-2 pt-2 pb-1 border-b border-gray-100/50">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                    <h3 className="text-xs font-black text-purple-700 tracking-wide uppercase">
-                      {getFormattedFullDateWithDayOfWeek(group.date)}
-                    </h3>
+        ) : (
+          <>
+            {/* 2. Grid de Agendamento (Hoje e Amanhã) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Coluna 1: Hoje */}
+              <div className="bg-white border border-gray-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-50">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Hoje</span>
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
+                      Hoje, <span className="text-orange-500">{getFormattedHeaderDate(hojeStr)}</span>
+                    </h2>
                   </div>
-                  <div className="space-y-3 pl-4 border-l-2 border-purple-100/60">
-                    {group.visitas.map((v) => (
+                  <span className="text-[10px] font-black bg-orange-50 border border-orange-200 text-orange-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    {hojeFiltered.length} {hojeFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                  {hojeFiltered.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 italic text-sm">
+                      Nenhuma visita agendada para hoje.
+                    </div>
+                  ) : (
+                    hojeFiltered.map((v) => (
                       <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
-              ))
-            )}
-          </div>
-        </div>
+              </div>
+
+              {/* Coluna 2: Amanhã */}
+              <div className="bg-white border border-gray-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-50">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visitas de Amanhã</span>
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 mt-1">
+                      Amanhã, <span className="text-blue-500">{getFormattedHeaderDate(amanhaStr)}</span>
+                    </h2>
+                  </div>
+                  <span className="text-[10px] font-black bg-blue-50 border border-blue-200 text-blue-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    {amanhaFiltered.length} {amanhaFiltered.length === 1 ? 'Agendamento' : 'Agendamentos'}
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                  {amanhaFiltered.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 italic text-sm">
+                      Nenhuma visita agendada para amanhã.
+                    </div>
+                  ) : (
+                    amanhaFiltered.map((v) => (
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Lista de Próximas */}
+            <div className="bg-white border border-gray-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-50">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                  <h2 className="text-base font-black text-gray-900">Cronograma de Próximas Visitas</h2>
+                </div>
+                <span className="text-[10px] font-black bg-purple-50 border border-purple-200 text-purple-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  {proximasFiltered.length} {proximasFiltered.length === 1 ? 'Visita' : 'Visitas'}
+                </span>
+              </div>
+
+              <div className="space-y-6">
+                {proximasGroupedByDate.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 italic text-sm">
+                    Nenhuma outra visita futura agendada.
+                  </div>
+                ) : (
+                  proximasGroupedByDate.map((group) => (
+                    <div key={group.date} className="space-y-3">
+                      <div className="flex items-center gap-2 pt-2 pb-1 border-b border-gray-100/50">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                        <h3 className="text-xs font-black text-purple-700 tracking-wide uppercase">
+                          {getFormattedFullDateWithDayOfWeek(group.date)}
+                        </h3>
+                      </div>
+                      <div className="space-y-3 pl-4 border-l-2 border-purple-100/60">
+                        {group.visitas.map((v) => (
+                          <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Modal de Edição */}
         {isModalOpen && selectedVisita && (
