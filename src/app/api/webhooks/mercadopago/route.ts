@@ -39,9 +39,13 @@ export async function POST(req: NextRequest) {
       // Adicionar registro de fatura de teste se o status for ativa ou inadimplente
       if (data && data.length > 0) {
         const statusFatura = testStatus === 'ativa' ? 'Paga' : 'Falhou';
+        const baseValor = data[0].mensalidade_customizada !== null ? Number(data[0].mensalidade_customizada) : 99.90;
+        const desconto = Number(data[0].desconto_mensal || 0);
+        const finalValor = Math.max(0, baseValor - desconto);
+
         await supabaseAdmin.from('faturas').insert({
           empresa_id: data[0].id,
-          valor: 99.90,
+          valor: finalValor,
           data_vencimento: new Date().toISOString(),
           status: statusFatura,
           mp_payment_id: 'test_payment_' + Math.random().toString(36).substr(2, 9)

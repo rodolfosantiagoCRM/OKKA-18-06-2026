@@ -57,9 +57,10 @@ export async function getFaturamentoDados() {
     // 1. Buscar a empresa para verificar o status de assinatura atual
     const { data: empresa, error: empresaError } = await supabase
       .from('empresas')
-      .select('id, nome_fantasia, status_assinatura, assinatura_mp_id')
+      .select('id, nome_fantasia, status_assinatura, assinatura_mp_id, mensalidade_customizada, desconto_mensal, motivo_desconto')
       .eq('id', context.empresa_id)
       .single();
+
 
     if (empresaError || !empresa) {
       console.error('Erro ao buscar empresa:', empresaError);
@@ -121,6 +122,18 @@ export async function iniciarCheckoutAssinatura(planoId: string) {
       return { success: false, error: 'Plano não encontrado ou indisponível.' };
     }
 
+    // Buscar faturamento customizado da empresa
+    const { data: empresa, error: empresaError } = await supabase
+      .from('empresas')
+      .select('mensalidade_customizada, desconto_mensal')
+      .eq('id', context.empresa_id)
+      .single();
+
+    if (empresaError || !empresa) {
+      console.error('Erro ao buscar dados da empresa:', empresaError);
+      return { success: false, error: 'Erro ao buscar dados cadastrais da empresa.' };
+    }
+
     // 2. Recuperar as credenciais do Mercado Pago
     const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
     if (!mpToken) {
@@ -136,7 +149,36 @@ export async function iniciarCheckoutAssinatura(planoId: string) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const back_url = `${protocol}://${host}/dashboard/mestre/configuracoes/assinatura`;
 
+    // Calcular valor final
+    const valorBase = empresa.mensalidade_customizada !== null 
+      ? Number(empresa.mensalidade_customizada) 
+      : Number(plano.valor);
+    const desconto = Number(empresa.desconto_mensal || 0);
+    const valorFinal = Math.max(0, valorBase - desconto);
+
     console.log(`[Faturamento Server Action] Iniciando checkout de assinatura para plano ${plano.nome} (MP Plan: ${plano.mp_plan_id})`);
+    console.log(`[Faturamento Server Action] Valor Base: R$ ${valorBase} | Desconto: R$ ${desconto} | Final: R$ ${valorFinal}`);
+
+    // Montar payload dinamicamente
+    const mpBody: any = {
+      payer_email: context.email,
+      back_url: back_url,
+      reason: `Assinatura ${plano.nome} - Hubly Pro`,
+      external_reference: context.empresa_id,
+      status: 'pending'
+    };
+
+    // Se possuir valor customizado ou desconto, envia a recorrência manual
+    if (empresa.mensalidade_customizada !== null || desconto > 0) {
+      mpBody.auto_recurring = {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: valorFinal,
+        currency_id: 'BRL'
+      };
+    } else {
+      mpBody.preapproval_plan_id = plano.mp_plan_id;
+    }
 
     // 4. Chamar a API de Preapproval do Mercado Pago para obter o init_point (Checkout Pro de Assinatura)
     const mpResponse = await fetch('https://api.mercadopago.com/preapproval', {
@@ -146,14 +188,7 @@ export async function iniciarCheckoutAssinatura(planoId: string) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        preapproval_plan_id: plano.mp_plan_id,
-        payer_email: context.email,
-        back_url: back_url,
-        reason: `Assinatura ${plano.nome} - Hubly Pro`,
-        external_reference: context.empresa_id,
-        status: 'pending'
-      })
+      body: JSON.stringify(mpBody)
     });
 
     if (!mpResponse.ok) {

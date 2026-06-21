@@ -80,7 +80,7 @@ export async function proxy(request: NextRequest) {
 
           if (normalizedRole === 'mestre' || normalizedRole === 'admin') {
             const allowedPath = '/dashboard/mestre/configuracoes/assinatura';
-            if (pathname !== allowedPath) {
+            if (!pathname.startsWith(allowedPath)) {
               console.log(`[Proxy] Empresa inadimplente/bloqueada. Redirecionando mestre ${user.email} para tela de assinatura`);
               return NextResponse.redirect(new URL(`${allowedPath}?pendente=true`, request.url));
             }

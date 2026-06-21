@@ -246,10 +246,53 @@ export default function AssinaturaPage() {
                   <span className="text-gray-400 font-medium">Ciclo de Faturamento:</span>
                   <span className="text-gray-800 font-bold">Mensal</span>
                 </div>
-                <div className="flex justify-between border-b border-gray-50 pb-2">
-                  <span className="text-gray-400 font-medium">Valor recorrente:</span>
-                  <span className="text-gray-800 font-bold">{planoAtivo ? formatCurrency(planoAtivo.valor) : 'R$ 99,90'}</span>
-                </div>
+                
+                {empresa?.mensalidade_customizada !== null ? (
+                  <>
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-400 font-medium">Valor Base (Plano):</span>
+                      <span className="text-gray-500 line-through">{planoAtivo ? formatCurrency(planoAtivo.valor) : 'R$ 99,90'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-50 pb-2">
+                      <span className="text-gray-400 font-medium">Preço Especial (Workspace):</span>
+                      <span className="text-violet-700 font-bold">{formatCurrency(Number(empresa.mensalidade_customizada))}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between border-b border-gray-50 pb-2">
+                    <span className="text-gray-400 font-medium">Valor recorrente:</span>
+                    <span className="text-gray-800 font-bold">{planoAtivo ? formatCurrency(planoAtivo.valor) : 'R$ 99,90'}</span>
+                  </div>
+                )}
+
+                {Number(empresa?.desconto_mensal || 0) > 0 && (
+                  <div className="flex flex-col border border-emerald-550/10 bg-emerald-500/5 p-2 rounded-lg gap-1.5 animate-fade-in">
+                    <div className="flex justify-between text-xs text-emerald-800 font-bold">
+                      <span>Campanha Ativa:</span>
+                      <span className="truncate max-w-[120px]" title={empresa.motivo_desconto}>{empresa.motivo_desconto || 'Desconto Promocional'}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                      <span>Desconto Aplicado:</span>
+                      <span>-{formatCurrency(Number(empresa.desconto_mensal))}</span>
+                    </div>
+                  </div>
+                )}
+
+                {(empresa?.mensalidade_customizada !== null || Number(empresa?.desconto_mensal || 0) > 0) && (
+                  <div className="flex justify-between border-b border-gray-50 pb-2 font-bold bg-violet-600/5 p-2 rounded-lg">
+                    <span className="text-violet-600">Valor Final Líquido:</span>
+                    <span className="text-violet-950 font-black">
+                      {formatCurrency(
+                        Math.max(
+                          0,
+                          (empresa?.mensalidade_customizada !== null ? Number(empresa.mensalidade_customizada) : (planoAtivo ? Number(planoAtivo.valor) : 99.90)) -
+                          Number(empresa?.desconto_mensal || 0)
+                        )
+                      )}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex justify-between pb-2">
                   <span className="text-gray-400 font-medium">Plataforma SaaS:</span>
                   <span className="text-orange-600 font-black uppercase">Hubly Pro</span>
@@ -299,9 +342,34 @@ export default function AssinaturaPage() {
                       <p className="text-[11px] text-gray-400 mt-1">Acesso completo ao CRM corporativo.</p>
                     </div>
 
-                    <div className="flex items-baseline gap-1 py-2">
-                      <span className="text-3xl font-black text-gray-900">{formatCurrency(plano.valor)}</span>
-                      <span className="text-xs text-gray-400 font-bold">/mês</span>
+                    <div className="py-2">
+                      {(empresa?.mensalidade_customizada !== null || Number(empresa?.desconto_mensal || 0) > 0) ? (
+                        <div className="space-y-1">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-gray-400 line-through text-lg">{formatCurrency(plano.valor)}</span>
+                            <span className="text-3xl font-black text-violet-600">
+                              {formatCurrency(
+                                Math.max(
+                                  0,
+                                  (empresa.mensalidade_customizada !== null ? Number(empresa.mensalidade_customizada) : Number(plano.valor)) -
+                                  Number(empresa.desconto_mensal || 0)
+                                )
+                              )}
+                            </span>
+                            <span className="text-xs text-gray-400 font-bold">/mês</span>
+                          </div>
+                          {Number(empresa?.desconto_mensal || 0) > 0 && (
+                            <div className="text-[10px] text-emerald-600 font-bold">
+                              Campanha: {empresa.motivo_desconto || 'Desconto Promocional'} (-{formatCurrency(Number(empresa.desconto_mensal))})
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-black text-gray-900">{formatCurrency(plano.valor)}</span>
+                          <span className="text-xs text-gray-400 font-bold">/mês</span>
+                        </div>
+                      )}
                     </div>
 
                     <ul className="space-y-2.5 text-xs text-gray-600">

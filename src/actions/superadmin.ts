@@ -375,3 +375,42 @@ export async function alternarBloqueioEmpresa(
   }
 }
 
+interface SalvarFaturamentoCustomizadoParams {
+  mensalidade_customizada: number | null;
+  desconto_mensal: number;
+  motivo_desconto: string | null;
+}
+
+/**
+ * Define ou remove o valor da mensalidade personalizada e descontos para uma empresa.
+ */
+export async function salvarFaturamentoCustomizado(
+  empresaId: string,
+  dados: SalvarFaturamentoCustomizadoParams
+) {
+  try {
+    const supabaseAdmin = createServerClient();
+    await checkSuperAdminPermission(supabaseAdmin);
+
+    const { error } = await supabaseAdmin
+      .from('empresas')
+      .update({
+        mensalidade_customizada: dados.mensalidade_customizada,
+        desconto_mensal: dados.desconto_mensal,
+        motivo_desconto: dados.motivo_desconto || null
+      })
+      .eq('id', empresaId);
+
+    if (error) {
+      console.error('Erro ao salvar faturamento customizado:', error);
+      return { success: false, error: error.message || 'Erro ao atualizar faturamento da empresa.' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Erro no salvarFaturamentoCustomizado:', err);
+    return { success: false, error: err.message || 'Erro inesperado ao salvar faturamento.' };
+  }
+}
+
+

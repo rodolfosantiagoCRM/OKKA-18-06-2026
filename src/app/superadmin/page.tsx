@@ -7,7 +7,8 @@ import {
   atualizarSenhaUsuario, 
   alterarStatusAssinatura,
   atualizarEmpresa,
-  alternarBloqueioEmpresa
+  alternarBloqueioEmpresa,
+  salvarFaturamentoCustomizado
 } from '@/actions/superadmin';
 import { supabase } from '@/lib/supabase';
 
@@ -18,6 +19,9 @@ interface EmpresaMetric {
   status_assinatura: 'ativa' | 'inadimplente' | 'cancelada';
   assinatura_mp_id: string | null;
   criado_em: string;
+  mensalidade_customizada: number | null;
+  desconto_mensal: number;
+  motivo_desconto: string | null;
   mestre: {
     id: string;
     nome: string;
@@ -71,6 +75,15 @@ export default function SuperAdminDashboard() {
 
   // Form de Alteração de Status
   const [statusLoading, setStatusLoading] = useState(false);
+
+  // Form de Customização de Mensalidade/Desconto
+  const [customPricingForm, setCustomPricingForm] = useState({
+    mensalidade_customizada: '',
+    desconto_mensal: '',
+    motivo_desconto: '',
+    isCustom: false
+  });
+  const [savePricingLoading, setSavePricingLoading] = useState(false);
 
   // Busca e Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -215,6 +228,35 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  // Salvar Faturamento Customizado
+  const handleSaveCustomPricing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmpresa) return;
+    setSavePricingLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await salvarFaturamentoCustomizado(selectedEmpresa.id, {
+        mensalidade_customizada: customPricingForm.isCustom ? Number(customPricingForm.mensalidade_customizada) : null,
+        desconto_mensal: Number(customPricingForm.desconto_mensal || 0),
+        motivo_desconto: customPricingForm.motivo_desconto || null
+      });
+
+      if (res.success) {
+        setSuccessMsg(`Configurações de faturamento de "${selectedEmpresa.nome_fantasia}" atualizadas com sucesso!`);
+        setIsStatusModalOpen(false);
+        loadData();
+      } else {
+        setError(res.error || 'Erro ao salvar configurações.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro inesperado.');
+    } finally {
+      setSavePricingLoading(false);
+    }
+  };
+
   // Mock data para fallback/visualização inicial
   function getMockData(): EmpresaMetric[] {
     return [
@@ -225,6 +267,9 @@ export default function SuperAdminDashboard() {
         status_assinatura: 'ativa',
         assinatura_mp_id: 'sub_mp_123456',
         criado_em: '2026-01-10T12:00:00Z',
+        mensalidade_customizada: null,
+        desconto_mensal: 0,
+        motivo_desconto: null,
         mestre: {
           id: 'u1',
           nome: 'Roberto Santiago',
@@ -242,6 +287,9 @@ export default function SuperAdminDashboard() {
         status_assinatura: 'ativa',
         assinatura_mp_id: 'sub_mp_789101',
         criado_em: '2026-03-15T15:30:00Z',
+        mensalidade_customizada: null,
+        desconto_mensal: 0,
+        motivo_desconto: null,
         mestre: {
           id: 'u2',
           nome: 'Clara Mendes',
@@ -259,6 +307,9 @@ export default function SuperAdminDashboard() {
         status_assinatura: 'inadimplente',
         assinatura_mp_id: 'sub_mp_112131',
         criado_em: '2026-04-01T09:00:00Z',
+        mensalidade_customizada: null,
+        desconto_mensal: 0,
+        motivo_desconto: null,
         mestre: {
           id: 'u3',
           nome: 'Felipe Dantas',
@@ -276,6 +327,9 @@ export default function SuperAdminDashboard() {
         status_assinatura: 'cancelada',
         assinatura_mp_id: 'sub_mp_415161',
         criado_em: '2026-02-20T10:15:00Z',
+        mensalidade_customizada: null,
+        desconto_mensal: 0,
+        motivo_desconto: null,
         mestre: {
           id: 'u4',
           nome: 'Mariana Lima',
@@ -302,9 +356,14 @@ export default function SuperAdminDashboard() {
   const clientesAtivos = empresas.filter(emp => emp.status_assinatura === 'ativa').length;
   const clientesInadimplentes = empresas.filter(emp => emp.status_assinatura === 'inadimplente').length;
   
-  // Assumindo mensalidade padrão de R$ 2.490,00
-  const valorMensalidade = 2490;
-  const MRR = clientesAtivos * valorMensalidade;
+  // Calcular o MRR dinamicamente somando o valor real de cada cliente ativo (mensalidade padrão = R$ 99,90)
+  const MRR = empresas
+    .filter(emp => emp.status_assinatura === 'ativa')
+    .reduce((acc, emp) => {
+      const base = emp.mensalidade_customizada !== null ? Number(emp.mensalidade_customizada) : 99.90;
+      const desc = Number(emp.desconto_mensal || 0);
+      return acc + Math.max(0, base - desc);
+    }, 0);
 
   // Novas assinaturas no mês corrente (Junho 2026)
   const novasAssinaturasMes = empresas.filter(emp => {
@@ -389,7 +448,7 @@ export default function SuperAdminDashboard() {
             <div className="text-3xl font-black mt-2 tracking-tight">
               R$ {MRR.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1 font-medium">Clientes ativos × R$ {valorMensalidade.toLocaleString('pt-BR')}/mês</p>
+            <p className="text-[11px] text-slate-500 mt-1 font-medium">Calculado com base nas mensalidades e descontos ativos</p>
           </div>
 
           {/* Card Clientes Ativos */}
@@ -496,18 +555,40 @@ export default function SuperAdminDashboard() {
                         </div>
                       </td>
                       <td className="py-4 px-5">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                          emp.status_assinatura === 'ativa'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
+                        <div className="space-y-1.5">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             emp.status_assinatura === 'ativa'
-                              ? 'bg-emerald-400'
-                              : 'bg-rose-500'
-                          }`} />
-                          {emp.status_assinatura === 'ativa' ? 'Ativo' : 'Não Pago / Bloqueado'}
-                        </span>
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : 'bg-rose-500/20 text-rose-400 border-rose-500/50 animate-pulse'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              emp.status_assinatura === 'ativa'
+                                ? 'bg-emerald-400'
+                                : 'bg-rose-500'
+                            }`} />
+                            {emp.status_assinatura === 'ativa' ? 'Ativo' : 'Não Pago / Bloqueado'}
+                          </span>
+                          
+                          <div className="text-[10px] text-slate-400 space-y-0.5">
+                            <div>
+                              {emp.mensalidade_customizada !== null ? (
+                                <span>Mensalidade: <span className="text-violet-400 font-semibold">R$ {Number(emp.mensalidade_customizada).toFixed(2)}</span></span>
+                              ) : (
+                                <span>Mensalidade: R$ 99,90</span>
+                              )}
+                            </div>
+                            {Number(emp.desconto_mensal) > 0 && (
+                              <div className="text-emerald-400 font-semibold flex flex-col">
+                                <span>Desconto: -R$ {Number(emp.desconto_mensal).toFixed(2)}</span>
+                                {emp.motivo_desconto && (
+                                  <span className="text-slate-500 text-[9px] font-normal truncate max-w-[150px]">
+                                    ({emp.motivo_desconto})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="py-4 px-5 text-right space-x-2">
                         <button
@@ -552,6 +633,12 @@ export default function SuperAdminDashboard() {
                         <button
                           onClick={() => {
                             setSelectedEmpresa(emp);
+                            setCustomPricingForm({
+                              mensalidade_customizada: emp.mensalidade_customizada !== null ? String(emp.mensalidade_customizada) : '',
+                              desconto_mensal: emp.desconto_mensal ? String(emp.desconto_mensal) : '',
+                              motivo_desconto: emp.motivo_desconto || '',
+                              isCustom: emp.mensalidade_customizada !== null
+                            });
                             setIsStatusModalOpen(true);
                           }}
                           className="bg-slate-900 border border-slate-800 hover:border-violet-500/40 text-slate-300 hover:text-violet-400 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer"
@@ -869,14 +956,87 @@ export default function SuperAdminDashboard() {
 
               <div className="h-px bg-slate-850" />
 
-              <div className="flex items-center justify-end">
-                <button
-                  onClick={() => setIsStatusModalOpen(false)}
-                  className="bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white py-2 px-5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Fechar
-                </button>
-              </div>
+              <form onSubmit={handleSaveCustomPricing} className="space-y-4">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Valores & Campanhas Promocionais</div>
+                
+                {/* Ativar valor personalizado */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isCustom"
+                    checked={customPricingForm.isCustom}
+                    onChange={(e) => setCustomPricingForm({
+                      ...customPricingForm,
+                      isCustom: e.target.checked,
+                      mensalidade_customizada: e.target.checked ? (customPricingForm.mensalidade_customizada || '99.90') : ''
+                    })}
+                    className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-violet-600 focus:ring-violet-500 focus:ring-offset-slate-900 focus:ring-2 cursor-pointer"
+                  />
+                  <label htmlFor="isCustom" className="text-xs text-slate-300 font-medium cursor-pointer">
+                    Mensalidade Personalizada
+                  </label>
+                </div>
+
+                {customPricingForm.isCustom && (
+                  <div className="space-y-1.5 pl-6">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Valor da Mensalidade (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="Ex: 150.00"
+                      value={customPricingForm.mensalidade_customizada}
+                      onChange={(e) => setCustomPricingForm({...customPricingForm, mensalidade_customizada: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2 px-3.5 text-xs outline-none text-slate-200"
+                    />
+                  </div>
+                )}
+
+                {/* Desconto do mês */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Desconto Promocional do Mês (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 20.00 (Opcional)"
+                    value={customPricingForm.desconto_mensal}
+                    onChange={(e) => setCustomPricingForm({...customPricingForm, desconto_mensal: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2 px-3.5 text-xs outline-none text-slate-200"
+                  />
+                </div>
+
+                {/* Motivo do desconto / Campanha */}
+                {Number(customPricingForm.desconto_mensal) > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Motivo do Desconto / Campanha</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Black Friday ou Desconto de Lançamento"
+                      value={customPricingForm.motivo_desconto}
+                      onChange={(e) => setCustomPricingForm({...customPricingForm, motivo_desconto: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 rounded-xl py-2 px-3.5 text-xs outline-none text-slate-200"
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsStatusModalOpen(false)}
+                    className="w-1/3 bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white py-2 px-4 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savePricingLoading}
+                    className="w-2/3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-xs uppercase py-2 px-4 rounded-xl transition-all shadow-md shadow-violet-600/20 disabled:opacity-50 cursor-pointer"
+                  >
+                    {savePricingLoading ? 'Salvando...' : 'Salvar Faturamento'}
+                  </button>
+                </div>
+              </form>
             </div>
 
           </div>
