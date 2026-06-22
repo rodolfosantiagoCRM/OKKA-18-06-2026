@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useVisitas } from '@/hooks/useVisitas';
+import { useLeads } from '@/hooks/useLeads';
+import { useProjects } from '@/hooks/useProjects';
 import AgendaHeader from '@/components/crm/agenda-header';
 import ModalPreenchimentoVisita from '@/components/crm/modal-preenchimento-visita';
 import ModalAgendamentoVisita from '@/components/crm/modal-agendamento-visita';
@@ -159,6 +161,13 @@ const MOCK_FALLBACK_VISITAS: Visita[] = [
   }
 ];
 
+const MOCK_FALLBACK_PROJECTS: import('@/types/database.types').Project[] = [
+  { id: 'p1', lead_id: 'l1', status_projeto: 'Instalação', endereco: 'Rua das Palmeiras, 405 - Cond. Royal - Curitiba', valor_total: 12500, criado_em: '2026-06-10T00:00:00Z', leads: { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T00:00:00Z' } },
+  { id: 'p2', lead_id: 'l2', status_projeto: 'Instalação', endereco: 'Av. Batel, 1200 - Apto 402 - Curitiba', valor_total: 8000, criado_em: '2026-06-12T00:00:00Z', leads: { id: 'l2', nome: 'Clarice Lispector', email: 'clarice@email.com', telefone: '(41) 99999-2222', cidade: 'Curitiba', area_m2: 45, status: 'Qualificado', criado_em: '2026-06-11T00:00:00Z' } },
+  { id: 'p3', lead_id: 'l3', status_projeto: 'Orçamento', endereco: 'Rua Desembargador Motta, 882 - Mercês', valor_total: 15400, criado_em: '2026-06-15T00:00:00Z', leads: { id: 'l3', nome: 'Julio Cortázar', email: 'julio@email.com', telefone: '(41) 99999-3333', cidade: 'Curitiba', area_m2: 110, status: 'Qualificado', criado_em: '2026-06-14T11:00:00Z' } },
+  { id: 'p4', lead_id: 'l4', status_projeto: 'Orçamento', endereco: 'Al. Julia da Costa, 150 - Cabral', valor_total: 9800, criado_em: '2026-06-16T00:00:00Z', leads: { id: 'l4', nome: 'Gabriel García Márquez', email: 'gabriel@email.com', telefone: '(41) 99999-4444', cidade: 'Curitiba', area_m2: 60, status: 'Qualificado', criado_em: '2026-06-15T16:20:00Z' } },
+];
+
 function getFormattedHeaderDate(dateStr: string) {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-');
@@ -209,6 +218,9 @@ export default function DashboardVisitas() {
     isCreating,
     deleteVisita,
   } = useVisitas();
+
+  const { createLead } = useLeads();
+  const { createProject, projects: dbProjects } = useProjects();
 
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -345,53 +357,202 @@ export default function DashboardVisitas() {
     }
   };
 
-  const handleScheduleVisita = async (novaVisita: {
-    project_id: string;
-    data_visita: string;
-    horario: string;
-    status_visita: 'Agendada';
-    observacoes: string;
-    tecnico_id?: string | null;
-    cliente?: string;
-    endereco?: string;
-  }) => {
-    if (isDbConfigured) {
-      await createVisita(novaVisita);
-    } else {
-      const newId = `v-local-${Date.now()}`;
-      const newRecord: Visita = {
-        id: newId,
-        project_id: novaVisita.project_id,
-        data_visita: novaVisita.data_visita,
-        horario: novaVisita.horario,
-        status_visita: novaVisita.status_visita,
-        material_usado: [],
-        valor_gasto: 0,
-        observacoes: novaVisita.observacoes,
-        tecnico_id: novaVisita.tecnico_id || null,
-        criado_em: new Date().toISOString(),
-        cliente: novaVisita.cliente,
-        endereco: novaVisita.endereco,
-        projects: {
-          id: novaVisita.project_id,
-          lead_id: 'l-mock',
-          status_projeto: 'Instalação',
-          endereco: novaVisita.endereco || '',
-          valor_total: 10000,
-          criado_em: new Date().toISOString(),
-          leads: {
-            id: 'l-mock',
-            nome: novaVisita.cliente || 'Cliente Mock',
-            email: '',
-            telefone: '',
-            cidade: 'Curitiba',
-            area_m2: 50,
-            status: 'Qualificado',
-            criado_em: new Date().toISOString()
+  const handleScheduleVisita = async (
+    novaVisita: {
+      data_visita: string;
+      horario: string;
+      status_visita: 'Agendada';
+      observacoes: string;
+      tecnico_id?: string | null;
+    },
+    newClientData?: {
+      nome: string;
+      email: string | null;
+      telefone: string;
+      cidade: string;
+      cep: string | null;
+      endereco_rua: string;
+      numero: string;
+      complemento: string;
+      bairro: string;
+      tipo_servico: string;
+      materiais_previstos: string[];
+      observacoes_projeto: string;
+    } | null,
+    project_id?: string
+  ) => {
+    try {
+      if (newClientData) {
+        // CADASTRO DE NOVO CLIENTE (LEAD + PROJETO + VISITA)
+        const formatEndereco = (rua: string, numero: string, complemento: string, bairro: string) => {
+          let parts: string[] = [];
+          if (rua.trim()) {
+            let ruaStr = rua.trim();
+            if (numero.trim()) {
+              ruaStr += `, ${numero.trim()}`;
+            }
+            parts.push(ruaStr);
           }
+          if (complemento.trim()) {
+            parts.push(complemento.trim());
+          }
+          if (bairro.trim()) {
+            parts.push(bairro.trim());
+          }
+          return parts.join(' - ');
+        };
+
+        const fullEndereco = formatEndereco(
+          newClientData.endereco_rua,
+          newClientData.numero,
+          newClientData.complemento,
+          newClientData.bairro
+        );
+
+        if (isDbConfigured) {
+          // 1. Cadastra o Lead
+          const newLead = await createLead({
+            nome: newClientData.nome,
+            email: newClientData.email,
+            telefone: newClientData.telefone,
+            cidade: newClientData.cidade,
+            area_m2: null,
+            endereco_obra: fullEndereco || null,
+            valor_estimado: 0,
+            materiais_previstos: newClientData.materiais_previstos || [],
+            observacoes: newClientData.observacoes_projeto || null,
+            status: 'Qualificado',
+            cep: newClientData.cep || null,
+            numero: newClientData.numero || null,
+            tipo_servico: newClientData.tipo_servico || null,
+          });
+
+          // 2. Cria o projeto correspondente
+          const newProject = await createProject({
+            lead_id: newLead.id,
+            endereco: fullEndereco || `${newClientData.cidade} - PR, Brasil`,
+            valor_total: 0,
+            status_projeto: 'Orçamento',
+          });
+
+          // 3. Agenda a Visita com o newProject.id
+          await createVisita({
+            project_id: newProject.id,
+            data_visita: novaVisita.data_visita,
+            horario: novaVisita.horario,
+            status_visita: 'Agendada',
+            observacoes: novaVisita.observacoes,
+            tecnico_id: novaVisita.tecnico_id,
+          });
+
+          showToast('Novo cliente cadastrado e visita agendada!', 'success');
+        } else {
+          // MOCK LOCAL FALLBACK
+          const mockLeadId = `l-local-${Date.now()}`;
+          const mockProjectId = `p-local-${Date.now()}`;
+          const mockVisitaId = `v-local-${Date.now()}`;
+
+          const newRecord: Visita = {
+            id: mockVisitaId,
+            project_id: mockProjectId,
+            data_visita: novaVisita.data_visita,
+            horario: novaVisita.horario,
+            status_visita: 'Agendada',
+            material_usado: [],
+            valor_gasto: 0,
+            observacoes: novaVisita.observacoes,
+            tecnico_id: novaVisita.tecnico_id || null,
+            criado_em: new Date().toISOString(),
+            cliente: newClientData.nome,
+            endereco: fullEndereco,
+            projects: {
+              id: mockProjectId,
+              lead_id: mockLeadId,
+              status_projeto: 'Orçamento',
+              endereco: fullEndereco || '',
+              valor_total: 0,
+              criado_em: new Date().toISOString(),
+              leads: {
+                id: mockLeadId,
+                nome: newClientData.nome,
+                email: newClientData.email,
+                telefone: newClientData.telefone,
+                cidade: newClientData.cidade,
+                area_m2: null,
+                status: 'Qualificado',
+                criado_em: new Date().toISOString(),
+                endereco_obra: fullEndereco,
+                cep: newClientData.cep,
+                numero: newClientData.numero,
+                tipo_servico: newClientData.tipo_servico,
+                materiais_previstos: newClientData.materiais_previstos,
+                observacoes: newClientData.observacoes_projeto
+              }
+            }
+          };
+
+          setLocalVisitasFallback((prev) => [...prev, newRecord]);
+          showToast('Novo cliente simulado e visita agendada!', 'success');
         }
-      };
-      setLocalVisitasFallback((prev) => [...prev, newRecord]);
+      } else if (project_id) {
+        // CLIENTE EXISTENTE
+        const selectedProj = (isDbConfigured ? dbProjects : MOCK_FALLBACK_PROJECTS).find((p) => p.id === project_id);
+        const clienteNome = selectedProj?.leads?.nome || 'Cliente Desconhecido';
+        const projectEndereco = selectedProj?.endereco || 'Endereço não informado';
+
+        if (isDbConfigured) {
+          await createVisita({
+            project_id: project_id,
+            data_visita: novaVisita.data_visita,
+            horario: novaVisita.horario,
+            status_visita: 'Agendada',
+            observacoes: novaVisita.observacoes,
+            tecnico_id: novaVisita.tecnico_id,
+          });
+          showToast('Visita agendada com sucesso!', 'success');
+        } else {
+          // MOCK LOCAL
+          const mockVisitaId = `v-local-${Date.now()}`;
+          const newRecord: Visita = {
+            id: mockVisitaId,
+            project_id: project_id,
+            data_visita: novaVisita.data_visita,
+            horario: novaVisita.horario,
+            status_visita: 'Agendada',
+            material_usado: [],
+            valor_gasto: 0,
+            observacoes: novaVisita.observacoes,
+            tecnico_id: novaVisita.tecnico_id || null,
+            criado_em: new Date().toISOString(),
+            cliente: clienteNome,
+            endereco: projectEndereco,
+            projects: {
+              id: project_id,
+              lead_id: selectedProj?.lead_id || 'l-mock',
+              status_projeto: selectedProj?.status_projeto || 'Orçamento',
+              endereco: projectEndereco,
+              valor_total: selectedProj?.valor_total || 0,
+              criado_em: selectedProj?.criado_em || new Date().toISOString(),
+              leads: selectedProj?.leads || {
+                id: 'l-mock',
+                nome: clienteNome,
+                email: '',
+                telefone: '',
+                cidade: 'Curitiba',
+                area_m2: 50,
+                status: 'Qualificado',
+                criado_em: new Date().toISOString()
+              }
+            }
+          };
+          setLocalVisitasFallback((prev) => [...prev, newRecord]);
+          showToast('Visita agendada com sucesso (Mock)!', 'success');
+        }
+      }
+    } catch (err: any) {
+      console.error('Erro ao agendar visita:', err);
+      showToast(err?.message || 'Erro ao agendar visita.', 'error');
+      throw err;
     }
   };
 
