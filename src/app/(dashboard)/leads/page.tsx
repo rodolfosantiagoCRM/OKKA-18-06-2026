@@ -118,6 +118,7 @@ export default function LeadsDashboard() {
       handleCloseQualifyModal();
     } catch (err) {
       console.error('Falha ao qualificar lead:', err);
+      alert(err instanceof Error ? err.message : 'Erro ao qualificar lead.');
     } finally {
       setLoadingAction(false);
     }
