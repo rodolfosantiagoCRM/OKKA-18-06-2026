@@ -31,7 +31,7 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 flex flex-col items-center justify-center px-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(226,91,60,0.08)_0%,transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,78,228,0.08)_0%,transparent_60%)] pointer-events-none" />
         
         <div className="max-w-4xl text-center space-y-8 z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/5 text-orange-400 text-sm font-medium">

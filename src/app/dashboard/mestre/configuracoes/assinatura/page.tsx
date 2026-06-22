@@ -82,7 +82,7 @@ export default function AssinaturaPage() {
     return (
       <div className="min-h-screen bg-[#FCFBFA] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin h-8 w-8 text-[#E25B3C]" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-8 w-8 text-[#0a4ee4]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -105,7 +105,7 @@ export default function AssinaturaPage() {
           <p className="text-sm text-gray-500 leading-relaxed">{error}</p>
           <button
             onClick={loadData}
-            className="w-full py-3 bg-[#E25B3C] hover:bg-orange-655 text-white font-bold rounded-2xl transition-all shadow-md shadow-orange-500/20 cursor-pointer text-sm"
+            className="w-full py-3 bg-[#0a4ee4] hover:bg-orange-655 text-white font-bold rounded-2xl transition-all shadow-md shadow-orange-500/20 cursor-pointer text-sm"
           >
             Tentar Novamente
           </button>
@@ -145,7 +145,7 @@ export default function AssinaturaPage() {
   const planoAtivo = planos.find(p => empresa?.assinatura_mp_id && p.mp_plan_id) || planos[0];
 
   return (
-    <div className="min-h-screen bg-[#FCFBFA] text-gray-900 p-6 md:p-10 font-sans selection:bg-[#E25B3C] selection:text-white">
+    <div className="min-h-screen bg-[#FCFBFA] text-gray-900 p-6 md:p-10 font-sans selection:bg-[#0a4ee4] selection:text-white">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Header */}
@@ -211,7 +211,7 @@ export default function AssinaturaPage() {
                   <button
                     onClick={() => handleCheckout(planoAtivo.id)}
                     disabled={actionLoading !== null}
-                    className="px-5 py-3 bg-[#E25B3C] hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-sm rounded-xl transition-all shadow-md shadow-orange-500/15 flex items-center justify-center gap-2 cursor-pointer"
+                    className="px-5 py-3 bg-[#0a4ee4] hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-sm rounded-xl transition-all shadow-md shadow-orange-500/15 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {actionLoading === planoAtivo.id ? (
                       <>
@@ -486,7 +486,7 @@ export default function AssinaturaPage() {
                           href={`/dashboard/mestre/configuracoes/assinatura/recibo/${fatura.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:border-[#E25B3C] text-gray-600 hover:text-[#E25B3C] rounded-lg transition-colors font-bold text-[11px] shadow-sm bg-white"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:border-[#0a4ee4] text-gray-600 hover:text-[#0a4ee4] rounded-lg transition-colors font-bold text-[11px] shadow-sm bg-white"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

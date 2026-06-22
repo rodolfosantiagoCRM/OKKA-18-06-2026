@@ -298,7 +298,7 @@ export default function DashboardLayout({
           <div className="p-6 space-y-8">
             {/* Logo */}
             <a href={permissions.dashboard ? "/dashboard" : "/visitas"} className="flex items-center gap-2.5 group">
-              <img src="/logo-hubly.png" alt="HUBLY PRO" className="h-10 w-auto object-contain" />
+              <img src="/logo-hubly.png" alt="HUBLY PRO" className="h-14 w-auto object-contain" />
             </a>
 
             {/* Navigation */}
@@ -312,7 +312,7 @@ export default function DashboardLayout({
                     href={item.href}
                     className={`px-3 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3 transition-all duration-200 ${
                       isActive
-                        ? 'bg-[#E25B3C] text-white shadow-md shadow-orange-500/25'
+                        ? 'bg-[#0a4ee4] text-white shadow-md shadow-orange-500/25'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
@@ -329,7 +329,7 @@ export default function DashboardLayout({
           {/* Footer do perfil */}
           <div className="p-5 border-t border-gray-100">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E25B3C] to-amber-500 flex items-center justify-center font-black text-sm text-white shadow-sm shadow-orange-500/20">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0a4ee4] to-amber-500 flex items-center justify-center font-black text-sm text-white shadow-sm shadow-orange-500/20">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -339,7 +339,7 @@ export default function DashboardLayout({
               <button
                 onClick={handleSignOut}
                 title="Sair do Sistema"
-                className="shrink-0 p-1.5 text-gray-400 hover:text-[#E25B3C] hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                className="shrink-0 p-1.5 text-gray-400 hover:text-[#0a4ee4] hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

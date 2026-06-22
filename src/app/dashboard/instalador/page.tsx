@@ -42,16 +42,16 @@ export default function InstaladorDashboardPage() {
       <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Ações Rápidas do Técnico</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#E25B3C] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
+          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#0a4ee4] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
             📅 Minha Agenda
           </button>
-          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#E25B3C] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
+          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#0a4ee4] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
             📝 Lançar Relatório de Visita
           </button>
-          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#E25B3C] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
+          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#0a4ee4] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
             📦 Solicitar Materiais
           </button>
-          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#E25B3C] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
+          <button className="p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:border-[#0a4ee4] rounded-xl transition-all font-semibold text-sm text-left shadow-sm">
             📞 Suporte da Engenharia
           </button>
         </div>

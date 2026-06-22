@@ -188,7 +188,7 @@ export default function GestaoEquipePage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans selection:bg-[#E25B3C] selection:text-white bg-[#FCFBFA] text-[#0B0F19] min-h-screen relative">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans selection:bg-[#0a4ee4] selection:text-white bg-[#FCFBFA] text-[#0B0F19] min-h-screen relative">
       
       {/* Toast Alert */}
       {toast && (
@@ -217,7 +217,7 @@ export default function GestaoEquipePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-150 pb-5">
         <div>
-          <span className="text-[10px] font-bold text-[#E25B3C] bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-[#0a4ee4] bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
             Conta Mestra (Hubly Pro)
           </span>
           <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">
@@ -230,7 +230,7 @@ export default function GestaoEquipePage() {
 
         <button
           onClick={openModal}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-[#E25B3C] to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/10 active:scale-[0.98] cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-[#0a4ee4] to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/10 active:scale-[0.98] cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -243,7 +243,7 @@ export default function GestaoEquipePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Colaboradores */}
         <div className="bg-white border border-gray-200/80 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#E25B3C]/5 rounded-full translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-300" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[#0a4ee4]/5 rounded-full translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-300" />
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Equipe</p>
           <div className="flex items-baseline gap-2 mt-2">
             <span className="text-3xl font-black text-gray-900">{stats.total}</span>
@@ -297,7 +297,7 @@ export default function GestaoEquipePage() {
               placeholder="Buscar por nome, e-mail ou WhatsApp..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-[#E25B3C] focus:bg-white text-gray-900 transition-all font-semibold"
+              className="block w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-[#0a4ee4] focus:bg-white text-gray-900 transition-all font-semibold"
             />
           </div>
           <div className="text-xs text-gray-400 font-medium">
@@ -309,7 +309,7 @@ export default function GestaoEquipePage() {
         <div className="overflow-x-auto">
           {loadingRealData && equipe.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-10 h-10 border-4 border-[#E25B3C] border-t-transparent rounded-full animate-spin" />
+              <div className="w-10 h-10 border-4 border-[#0a4ee4] border-t-transparent rounded-full animate-spin" />
               <p className="text-sm font-semibold text-gray-500">Sincronizando equipe...</p>
             </div>
           ) : filteredEquipe.length === 0 ? (
@@ -420,7 +420,7 @@ export default function GestaoEquipePage() {
           {/* Modal Container */}
           <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-gray-100 transform transition-all scale-100 duration-300">
             {/* Top Indicator bar */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
 
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex justify-between items-start">
@@ -472,7 +472,7 @@ export default function GestaoEquipePage() {
                       value={nomeCompleto}
                       onChange={(e) => setNomeCompleto(e.target.value)}
                       disabled={isSaving}
-                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold"
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold"
                     />
                   </div>
                 </div>
@@ -496,7 +496,7 @@ export default function GestaoEquipePage() {
                       value={emailCorporativo}
                       onChange={(e) => setEmailCorporativo(e.target.value)}
                       disabled={isSaving}
-                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold"
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold"
                     />
                   </div>
                 </div>
@@ -522,7 +522,7 @@ export default function GestaoEquipePage() {
                         value={whatsapp}
                         onChange={handleWhatsappChange}
                         disabled={isSaving}
-                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold font-mono"
+                        className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-4 py-2.5 text-gray-800 placeholder-gray-400 outline-none transition-all text-sm font-semibold font-mono"
                       />
                     </div>
                   </div>
@@ -543,7 +543,7 @@ export default function GestaoEquipePage() {
                         value={nivelAcesso}
                         onChange={(e) => setNivelAcesso(e.target.value as any)}
                         disabled={isSaving}
-                        className="w-full bg-gray-50 border border-gray-200 hover:border-gray-300 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-10 py-2.5 text-gray-800 outline-none transition-all text-sm font-bold cursor-pointer appearance-none"
+                        className="w-full bg-gray-50 border border-gray-200 hover:border-gray-300 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-10 pr-10 py-2.5 text-gray-800 outline-none transition-all text-sm font-bold cursor-pointer appearance-none"
                       >
                         <option value="vendedor">Vendedor (Vendas)</option>
                         <option value="instalador">Instalador (Técnico)</option>
@@ -572,7 +572,7 @@ export default function GestaoEquipePage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5.5 py-2.5 bg-gradient-to-r from-[#E25B3C] to-amber-600 hover:from-orange-600 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-2"
+                  className="px-5.5 py-2.5 bg-gradient-to-r from-[#0a4ee4] to-amber-600 hover:from-orange-600 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-2"
                 >
                   {isSaving ? (
                     <>

@@ -301,7 +301,7 @@ export default function DashboardLayout({
           <div className="p-6 space-y-8">
             {/* Logo */}
             <a href={permissions.dashboard ? "/dashboard" : "/visitas"} className="flex items-center gap-2.5 group">
-              <img src="/logo-hubly.png" alt="HUBLY PRO" className="h-10 w-auto object-contain" />
+              <img src="/logo-hubly.png" alt="HUBLY PRO" className="h-14 w-auto object-contain" />
             </a>
 
             {/* Navigation */}

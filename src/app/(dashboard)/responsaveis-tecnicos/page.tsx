@@ -598,7 +598,7 @@ export default function ResponsaveisTecnicosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFBFA] text-[#0B0F19] p-6 md:p-10 font-sans relative selection:bg-[#E25B3C] selection:text-white">
+    <div className="min-h-screen bg-[#FCFBFA] text-[#0B0F19] p-6 md:p-10 font-sans relative selection:bg-[#0a4ee4] selection:text-white">
       
       {/* Toast Alert */}
       {toast && (
@@ -629,7 +629,7 @@ export default function ResponsaveisTecnicosPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] font-bold text-[#E25B3C] bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[#0a4ee4] bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
               Gestão Integrada - IAM & Equipes
             </span>
             <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Equipe & Acessos</h1>
@@ -640,9 +640,9 @@ export default function ResponsaveisTecnicosPage() {
           {isDbConfigured && (
             <button
               onClick={handleOpenPermissionsModal}
-              className="bg-white border border-gray-200 hover:border-[#E25B3C] text-gray-700 hover:text-[#E25B3C] font-black text-xs px-4.5 py-3 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-2 self-start md:self-center"
+              className="bg-white border border-gray-200 hover:border-[#0a4ee4] text-gray-700 hover:text-[#0a4ee4] font-black text-xs px-4.5 py-3 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-2 self-start md:self-center"
             >
-              <svg className="w-4 h-4 text-gray-400 group-hover:text-[#E25B3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-400 group-hover:text-[#0a4ee4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
               Permissões de Abas
@@ -653,7 +653,7 @@ export default function ResponsaveisTecnicosPage() {
         {/* Stats Rápidos */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#E25B3C] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#0a4ee4] shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -704,11 +704,11 @@ export default function ResponsaveisTecnicosPage() {
           {/* Form de Cadastro */}
           <div className="lg:col-span-1">
             <div className="bg-white border border-gray-200/80 rounded-3xl shadow-sm overflow-hidden sticky top-6">
-              <div className="h-1.5 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+              <div className="h-1.5 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
               
               <div className="p-6 border-b border-gray-100">
                 <h2 className="text-base font-black text-gray-900 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center text-[#E25B3C]">
+                  <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center text-[#0a4ee4]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
@@ -729,7 +729,7 @@ export default function ResponsaveisTecnicosPage() {
                     onChange={(e) => setNome(e.target.value)}
                     placeholder="Ex: João da Silva"
                     disabled={isCreating}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
                   />
                 </div>
 
@@ -743,7 +743,7 @@ export default function ResponsaveisTecnicosPage() {
                     onChange={(e) => setTelefone(formatPhone(e.target.value))}
                     placeholder="Ex: (41) 99999-9999"
                     disabled={isCreating}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold font-mono"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold font-mono"
                   />
                 </div>
 
@@ -757,7 +757,7 @@ export default function ResponsaveisTecnicosPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Ex: joao@email.com"
                     disabled={isCreating}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
                   />
                 </div>
 
@@ -768,7 +768,7 @@ export default function ResponsaveisTecnicosPage() {
                     value={role}
                     onChange={(e) => setRole(e.target.value as any)}
                     disabled={isCreating}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 outline-none transition-all font-bold cursor-pointer"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 outline-none transition-all font-bold cursor-pointer"
                   >
                     <option value="tecnico">Técnico Operacional (Visitas)</option>
                     <option value="instalador">Instalador de Campo</option>
@@ -784,7 +784,7 @@ export default function ResponsaveisTecnicosPage() {
                     <button
                       type="button"
                       onClick={() => handleGeneratePassword(false)}
-                      className="text-[10px] text-[#E25B3C] hover:text-orange-600 font-bold uppercase tracking-wider"
+                      className="text-[10px] text-[#0a4ee4] hover:text-orange-600 font-bold uppercase tracking-wider"
                     >
                       Gerar Senha
                     </button>
@@ -797,7 +797,7 @@ export default function ResponsaveisTecnicosPage() {
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Padrão: HublyTeam2026!"
                       disabled={isCreating}
-                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
                     />
                     <button
                       type="button"
@@ -821,7 +821,7 @@ export default function ResponsaveisTecnicosPage() {
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="w-full py-2.5 bg-gradient-to-r from-[#E25B3C] to-amber-600 hover:from-orange-600 hover:to-amber-700 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-2.5 bg-gradient-to-r from-[#0a4ee4] to-amber-600 hover:from-orange-600 hover:to-amber-700 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
                   {isCreating ? (
                     <>
@@ -856,7 +856,7 @@ export default function ResponsaveisTecnicosPage() {
                   placeholder="Buscar por nome, e-mail, WhatsApp ou nível de acesso..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-semibold"
                 />
               </div>
             </div>
@@ -864,7 +864,7 @@ export default function ResponsaveisTecnicosPage() {
             {/* Tabela */}
             {loading ? (
               <div className="bg-white border border-gray-200/80 rounded-3xl p-20 text-center shadow-sm flex flex-col items-center justify-center gap-3">
-                <div className="w-8 h-8 border-4 border-[#E25B3C] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-[#0a4ee4] border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm font-semibold text-gray-450">Sincronizando banco de dados...</p>
               </div>
             ) : filteredColaboradores.length === 0 ? (
@@ -905,7 +905,7 @@ export default function ResponsaveisTecnicosPage() {
                                   {initials}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-bold text-gray-900 group-hover:text-[#E25B3C] transition-colors flex items-center gap-1.5">
+                                  <p className="text-sm font-bold text-gray-900 group-hover:text-[#0a4ee4] transition-colors flex items-center gap-1.5">
                                     {colab.nome_completo}
                                     {isSelf && (
                                       <span className="text-[9px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-md">
@@ -947,7 +947,7 @@ export default function ResponsaveisTecnicosPage() {
                                   disabled={isSelf || isUpdatingThis}
                                   onClick={() => handleToggleStatus(colab)}
                                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed ${
-                                    colab.status_acesso ? 'bg-[#E25B3C]' : 'bg-gray-250'
+                                    colab.status_acesso ? 'bg-[#0a4ee4]' : 'bg-gray-250'
                                   }`}
                                 >
                                   <span
@@ -981,7 +981,7 @@ export default function ResponsaveisTecnicosPage() {
                                 <button
                                   onClick={() => handleCopyCredentials(colab)}
                                   title="Copiar Credenciais de Login"
-                                  className="p-2 text-gray-400 hover:text-[#E25B3C] hover:bg-orange-50 rounded-xl transition-all cursor-pointer"
+                                  className="p-2 text-gray-400 hover:text-[#0a4ee4] hover:bg-orange-50 rounded-xl transition-all cursor-pointer"
                                 >
                                   {copiedId === colab.id ? (
                                     <svg className="w-4 h-4 text-emerald-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1037,7 +1037,7 @@ export default function ResponsaveisTecnicosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setEditingUser(null)} className="absolute inset-0 bg-gray-900/50 backdrop-blur-xs" />
           <div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-gray-150 transform transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
             
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-black text-gray-900">Editar Credenciais</h3>
@@ -1056,7 +1056,7 @@ export default function ResponsaveisTecnicosPage() {
                     required
                     value={editNome}
                     onChange={(e) => setEditNome(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
                   />
                 </div>
 
@@ -1068,7 +1068,7 @@ export default function ResponsaveisTecnicosPage() {
                     value={editTelefone}
                     onChange={(e) => setEditTelefone(formatPhone(e.target.value))}
                     placeholder="Ex: (41) 99999-9999"
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold font-mono"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold font-mono"
                   />
                 </div>
 
@@ -1080,7 +1080,7 @@ export default function ResponsaveisTecnicosPage() {
                     required
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
                   />
                 </div>
 
@@ -1091,7 +1091,7 @@ export default function ResponsaveisTecnicosPage() {
                     value={editRole}
                     disabled={editingUser.id === currentUserId}
                     onChange={(e) => setEditRole(e.target.value as any)}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 outline-none transition-all font-bold cursor-pointer disabled:opacity-50"
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl px-4 py-2.5 text-sm text-gray-805 outline-none transition-all font-bold cursor-pointer disabled:opacity-50"
                   >
                     <option value="tecnico">Técnico Operacional (Visitas)</option>
                     <option value="instalador">Instalador de Campo</option>
@@ -1110,7 +1110,7 @@ export default function ResponsaveisTecnicosPage() {
                     <button
                       type="button"
                       onClick={() => handleGeneratePassword(true)}
-                      className="text-[10px] text-[#E25B3C] hover:text-orange-600 font-bold uppercase tracking-wider"
+                      className="text-[10px] text-[#0a4ee4] hover:text-orange-600 font-bold uppercase tracking-wider"
                     >
                       Gerar Senha
                     </button>
@@ -1122,7 +1122,7 @@ export default function ResponsaveisTecnicosPage() {
                       value={editSenha}
                       onChange={(e) => setEditSenha(e.target.value)}
                       placeholder="Deixe em branco para manter a atual"
-                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#E25B3C] focus:ring-2 focus:ring-orange-100 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
+                      className="w-full bg-gray-50 border border-gray-200 focus:border-[#0a4ee4] focus:ring-2 focus:ring-orange-100 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-805 placeholder-gray-400 outline-none transition-all font-semibold"
                     />
                     <button
                       type="button"
@@ -1155,7 +1155,7 @@ export default function ResponsaveisTecnicosPage() {
                 <button
                   type="submit"
                   disabled={isUpdating !== null}
-                  className="px-4.5 py-2 bg-[#E25B3C] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
+                  className="px-4.5 py-2 bg-[#0a4ee4] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
                 >
                   {isUpdating !== null ? (
                     <>
@@ -1179,7 +1179,7 @@ export default function ResponsaveisTecnicosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setNewCredentials(null)} className="absolute inset-0 bg-gray-900/50 backdrop-blur-xs" />
           <div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-gray-150 transform transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
             
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-black text-gray-900">
@@ -1222,7 +1222,7 @@ export default function ResponsaveisTecnicosPage() {
               )}
               <button
                 onClick={handleCopyNewCredentials}
-                className="px-4.5 py-2 bg-[#E25B3C] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
+                className="px-4.5 py-2 bg-[#0a4ee4] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-5 4h6m-6 4h6m-6 4h4" />
@@ -1239,7 +1239,7 @@ export default function ResponsaveisTecnicosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div onClick={() => setIsPermModalOpen(false)} className="absolute inset-0 bg-gray-900/50 backdrop-blur-xs" />
           <div className="relative bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-gray-150 transform transition-all duration-300">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
             
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
@@ -1259,7 +1259,7 @@ export default function ResponsaveisTecnicosPage() {
             <div className="p-6 overflow-x-auto max-h-[60vh]">
               {loadingPerms ? (
                 <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-                  <div className="w-8 h-8 border-4 border-[#E25B3C] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-[#0a4ee4] border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm font-semibold text-gray-400">Carregando tabela de permissões...</p>
                 </div>
               ) : (
@@ -1349,7 +1349,7 @@ export default function ResponsaveisTecnicosPage() {
                 type="button"
                 disabled={savingPerms || loadingPerms}
                 onClick={handleSavePermissions}
-                className="px-4.5 py-2 bg-[#E25B3C] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
+                className="px-4.5 py-2 bg-[#0a4ee4] hover:bg-orange-600 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-orange-500/10 cursor-pointer flex items-center gap-1.5"
               >
                 {savingPerms ? (
                   <>

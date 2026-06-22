@@ -88,13 +88,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFBFA] text-[#0B0F19] flex items-center justify-center p-6 selection:bg-[#E25B3C] selection:text-white font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#FCFBFA] text-[#0B0F19] flex items-center justify-center p-6 selection:bg-[#0a4ee4] selection:text-white font-sans relative overflow-hidden">
       {/* Gradients de Fundo */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(226,91,60,0.04)_0%,transparent_65%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,78,228,0.04)_0%,transparent_65%)] pointer-events-none" />
       
       <div className="max-w-md w-full bg-white border border-gray-200/80 rounded-3xl p-8 shadow-xl backdrop-blur-sm relative overflow-hidden">
         {/* Indicador de marca superior */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#E25B3C] to-amber-500" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#0a4ee4] to-amber-500" />
         
         {/* Cabeçalho */}
         <div className="text-center mb-8">
@@ -123,7 +123,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu.email@hublypro.com.br"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-[#E25B3C] focus:ring-1 focus:ring-[#E25B3C]/30 transition-all font-semibold"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-[#0a4ee4] focus:ring-1 focus:ring-[#0a4ee4]/30 transition-all font-semibold"
             />
           </div>
 
@@ -135,14 +135,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-[#E25B3C] focus:ring-1 focus:ring-[#E25B3C]/30 transition-all font-semibold"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-[#0a4ee4] focus:ring-1 focus:ring-[#0a4ee4]/30 transition-all font-semibold"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-[#E25B3C] to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-gradient-to-r from-[#0a4ee4] to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

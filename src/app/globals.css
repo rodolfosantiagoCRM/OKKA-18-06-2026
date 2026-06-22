@@ -28,6 +28,32 @@
   --color-ring: var(--ring);
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+  /* Custom overrides for orange scale to match Tiny ERP blue */
+  --color-orange-50: #eff6ff;
+  --color-orange-100: #dbeafe;
+  --color-orange-200: #bfdbfe;
+  --color-orange-300: #93c5fd;
+  --color-orange-400: #60a5fa;
+  --color-orange-500: #0a4ee4;
+  --color-orange-600: #2563eb;
+  --color-orange-700: #1d4ed8;
+  --color-orange-800: #1e40af;
+  --color-orange-900: #1e3a8a;
+  --color-orange-950: #172554;
+
+  /* Custom overrides for amber scale to match neutral slate shades */
+  --color-amber-50: #f8fafc;
+  --color-amber-100: #f1f5f9;
+  --color-amber-200: #e2e8f0;
+  --color-amber-300: #cbd5e1;
+  --color-amber-400: #94a3b8;
+  --color-amber-500: #64748b;
+  --color-amber-600: #475569;
+  --color-amber-700: #334155;
+  --color-amber-800: #1e293b;
+  --color-amber-900: #0f172a;
+  --color-amber-950: #020617;
 }
 
 :root {
@@ -38,19 +64,19 @@
   --card-foreground: #0B0F19;
   --popover: #ffffff;
   --popover-foreground: #0B0F19;
-  --primary: #E25B3C;
+  --primary: #0a4ee4;
   --primary-foreground: #ffffff;
   --secondary: #1E293B;
   --secondary-foreground: #f8fafc;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #ffedd5;
-  --accent-foreground: #c2410c;
+  --accent: #eff6ff;
+  --accent-foreground: #0a4ee4;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #E25B3C;
+  --ring: #0a4ee4;
 }
 
 body {
