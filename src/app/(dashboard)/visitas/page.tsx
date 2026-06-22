@@ -223,11 +223,59 @@ export default function DashboardVisitas() {
   const { createLead } = useLeads();
   const { createProject, projects: dbProjects } = useProjects();
 
+  const isDbConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
 
   const [copiedVisitaId, setCopiedVisitaId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          let userRole = session.user.user_metadata?.role;
+          if (!userRole) {
+            // Consultar a tabela 'perfis'
+            const { data: perfil } = await supabase
+              .from('perfis')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            if (perfil?.role) {
+              userRole = perfil.role;
+            } else {
+              // Fallback para 'perfis_usuarios'
+              const { data: perfilUsuario } = await supabase
+                .from('perfis_usuarios')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+              if (perfilUsuario?.role) {
+                userRole = perfilUsuario.role;
+              }
+            }
+          }
+          if (userRole) {
+            setCurrentUserRole(userRole.toLowerCase());
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar papel do usuário:', err);
+      }
+    }
+    if (isDbConfigured) {
+      fetchUserRole();
+    } else {
+      // Mock mestre offline
+      setCurrentUserRole('mestre');
+    }
+  }, [isDbConfigured]);
 
   const handleCopyText = async (id: string, text: string) => {
     try {
@@ -252,10 +300,6 @@ export default function DashboardVisitas() {
 
   // Fallback local caso o banco esteja vazio
   const [localVisitasFallback, setLocalVisitasFallback] = useState<Visita[]>(MOCK_FALLBACK_VISITAS);
-
-  const isDbConfigured =
-    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
   // Gerar datas no fuso horário do Brasil para o mock, se necessário
   const clientDates = useMemo(() => {
@@ -306,9 +350,9 @@ export default function DashboardVisitas() {
     });
 
     const atrasadas = list.filter((v) => v.data_visita < hojeStr && v.status_visita === 'Agendada');
-    const hoje = list.filter((v) => v.data_visita === hojeStr);
-    const amanha = list.filter((v) => v.data_visita === amanhaStr);
-    const proximas = list.filter((v) => v.data_visita > amanhaStr);
+    const hoje = list.filter((v) => v.data_visita === hojeStr && v.status_visita === 'Agendada');
+    const amanha = list.filter((v) => v.data_visita === amanhaStr && v.status_visita === 'Agendada');
+    const proximas = list.filter((v) => v.data_visita > amanhaStr && v.status_visita === 'Agendada');
 
     return { atrasadas, hoje, amanha, proximas, raw: list };
   }, [localVisitasFallback, hojeStr, amanhaStr]);
@@ -357,6 +401,25 @@ export default function DashboardVisitas() {
       );
     }
   };
+
+  const handleUpdateStatus = async (id: string, status: 'Realizada' | 'Cancelada') => {
+    try {
+      if (isDbConfigured) {
+        await updateVisita({ id, updates: { status_visita: status } });
+        showToast(`Visita marcada como ${status.toLowerCase()}!`, 'success');
+      } else {
+        setLocalVisitasFallback((prev) =>
+          prev.map((v) => (v.id === id ? { ...v, status_visita: status } : v))
+        );
+        showToast(`Visita marcada como ${status.toLowerCase()} (Mock)!`, 'success');
+      }
+    } catch (err: any) {
+      console.error('Erro ao atualizar status da visita:', err);
+      showToast(err?.message || 'Erro ao atualizar status da visita.', 'error');
+    }
+  };
+
+  const canManageStatus = currentUserRole === 'mestre' || currentUserRole === 'admin';
 
   const handleScheduleVisita = async (
     novaVisita: {
@@ -829,6 +892,36 @@ export default function DashboardVisitas() {
                       <span className="hidden md:inline-block text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-full">
                         +{diasAtraso}d
                       </span>
+                      {canManageStatus && (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Marcar a visita de ${clienteNome} como Realizada?`)) {
+                                handleUpdateStatus(v.id, 'Realizada');
+                              }
+                            }}
+                            title="Marcar como Realizada"
+                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 text-emerald-600 hover:text-emerald-700 transition-all cursor-pointer inline-flex items-center justify-center shrink-0"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Marcar a visita de ${clienteNome} como Cancelada?`)) {
+                                handleUpdateStatus(v.id, 'Cancelada');
+                              }
+                            }}
+                            title="Marcar como Cancelada"
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 text-rose-600 hover:text-rose-700 transition-all cursor-pointer inline-flex items-center justify-center shrink-0"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                       {tecnicoTelefone && (
                         <button
                           onClick={() => {
@@ -941,6 +1034,8 @@ export default function DashboardVisitas() {
                     onOpenModal={handleOpenModal}
                     onDelete={handleDeleteVisita}
                     showDate={true}
+                    canManageStatus={canManageStatus}
+                    onUpdateStatus={handleUpdateStatus}
                   />
                 ))
               )}
@@ -974,7 +1069,7 @@ export default function DashboardVisitas() {
                     </div>
                   ) : (
                     hojeFiltered.map((v) => (
-                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} />
                     ))
                   )}
                 </div>
@@ -1004,7 +1099,7 @@ export default function DashboardVisitas() {
                     </div>
                   ) : (
                     amanhaFiltered.map((v) => (
-                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} />
                     ))
                   )}
                 </div>
@@ -1039,7 +1134,7 @@ export default function DashboardVisitas() {
                       </div>
                       <div className="space-y-3 pl-4 border-l-2 border-purple-100/60">
                         {group.visitas.map((v) => (
-                          <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} />
+                          <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} />
                         ))}
                       </div>
                     </div>

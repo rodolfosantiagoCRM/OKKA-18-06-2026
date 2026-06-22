@@ -90,13 +90,13 @@ export async function getGroupedVisitas() {
   const amanhaStr = formatTZ(tomorrow);
 
   // IMPORTANTE: atrasadas = status 'Agendada' com data ANTERIOR a hoje (não aparecem em "Hoje")
-  // hoje = visitas do dia de hoje (todos os status)
-  // amanha = visitas de amanhã
-  // proximas = visitas após amanhã
+  // hoje = visitas do dia de hoje (apenas status 'Agendada')
+  // amanha = visitas de amanhã (apenas status 'Agendada')
+  // proximas = visitas após amanhã (apenas status 'Agendada')
   const atrasadas = visits.filter(v => v.data_visita < hojeStr && v.status_visita === 'Agendada');
-  const hoje = visits.filter(v => v.data_visita === hojeStr);
-  const amanha = visits.filter(v => v.data_visita === amanhaStr);
-  const proximas = visits.filter(v => v.data_visita > amanhaStr);
+  const hoje = visits.filter(v => v.data_visita === hojeStr && v.status_visita === 'Agendada');
+  const amanha = visits.filter(v => v.data_visita === amanhaStr && v.status_visita === 'Agendada');
+  const proximas = visits.filter(v => v.data_visita > amanhaStr && v.status_visita === 'Agendada');
 
   return {
     hojeStr,

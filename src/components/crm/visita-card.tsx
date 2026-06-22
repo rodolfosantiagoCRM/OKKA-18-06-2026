@@ -6,6 +6,8 @@ interface VisitaCardProps {
   onOpenModal: (visita: Visita) => void;
   showDate?: boolean;
   onDelete?: (id: string) => void;
+  onUpdateStatus?: (id: string, status: 'Realizada' | 'Cancelada') => Promise<void>;
+  canManageStatus?: boolean;
 }
 
 function checkIsAtrasado(dateStr: string | null | undefined, timeStr: string | null | undefined, status: string): boolean {
@@ -22,7 +24,14 @@ function checkIsAtrasado(dateStr: string | null | undefined, timeStr: string | n
   return visitDate < now;
 }
 
-export default function VisitaCard({ visita, onOpenModal, showDate = false, onDelete }: VisitaCardProps) {
+export default function VisitaCard({
+  visita,
+  onOpenModal,
+  showDate = false,
+  onDelete,
+  onUpdateStatus,
+  canManageStatus = false
+}: VisitaCardProps) {
   const clienteNome = visita.projects?.leads?.nome || visita.cliente;
 
   // Constrói o endereço completo utilizando os dados do cadastro do Lead se disponíveis,
@@ -194,6 +203,38 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </a>
+        )}
+        {canManageStatus && visita.status_visita === 'Agendada' && onUpdateStatus && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Marcar a visita de ${clienteNome} como Realizada?`)) {
+                  onUpdateStatus(visita.id, 'Realizada');
+                }
+              }}
+              title="Marcar como Realizada"
+              className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 text-emerald-600 hover:text-emerald-700 transition-all cursor-pointer shrink-0 inline-flex items-center justify-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Marcar a visita de ${clienteNome} como Cancelada?`)) {
+                  onUpdateStatus(visita.id, 'Cancelada');
+                }
+              }}
+              title="Marcar como Cancelada"
+              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 text-rose-600 hover:text-rose-700 transition-all cursor-pointer shrink-0 inline-flex items-center justify-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </>
         )}
         {tecnicoNome && tecnicoTelefone && (
           <button
