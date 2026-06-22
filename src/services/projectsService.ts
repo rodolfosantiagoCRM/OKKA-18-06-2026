@@ -64,4 +64,18 @@ export const projectsService = {
     }
     return data as Project;
   },
+
+  /**
+   * Exclui um projeto pelo ID
+   */
+  async deleteProject(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao excluir o projeto.');
+    }
+  },
 };

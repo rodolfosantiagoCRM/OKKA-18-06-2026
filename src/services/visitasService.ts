@@ -93,4 +93,21 @@ export const visitasService = {
       throw new Error(error.message || 'Erro ao excluir visita técnica.');
     }
   },
+
+  /**
+   * Obtém todas as visitas técnicas de um projeto específico, incluindo o responsável técnico
+   */
+  async getVisitasByProjectId(projectId: string): Promise<Visita[]> {
+    const { data, error } = await supabase
+      .from('visits')
+      .select('*, responsaveis_tecnicos(*)')
+      .eq('project_id', projectId)
+      .order('data_visita', { ascending: false })
+      .order('horario', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao carregar histórico de visitas do projeto.');
+    }
+    return (data || []) as unknown as Visita[];
+  },
 };

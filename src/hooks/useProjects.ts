@@ -27,6 +27,15 @@ export function useProjects() {
     },
   });
 
+  // Mutação para excluir um projeto
+  const deleteProjectMutation = useMutation({
+    mutationFn: projectsService.deleteProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['visitas'] });
+    },
+  });
+
   return {
     projects: projectsQuery.data || [],
     isLoading: projectsQuery.isLoading,
@@ -35,5 +44,7 @@ export function useProjects() {
     isCreating: createProjectMutation.isPending,
     updateProjectStatus: updateProjectMutation.mutateAsync,
     isUpdatingProject: updateProjectMutation.isPending,
+    deleteProject: deleteProjectMutation.mutateAsync,
+    isDeletingProject: deleteProjectMutation.isPending,
   };
 }
