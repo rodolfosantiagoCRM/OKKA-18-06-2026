@@ -37,6 +37,14 @@ export function useLeads() {
     },
   });
 
+  // Mutação para excluir um lead
+  const deleteLeadMutation = useMutation({
+    mutationFn: (id: string) => leadsService.deleteLead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    },
+  });
+
   return {
     leads: leadsQuery.data || [],
     isLoading: leadsQuery.isLoading,
@@ -47,5 +55,7 @@ export function useLeads() {
     isUpdatingStatus: updateLeadStatusMutation.isPending,
     updateLead: updateLeadMutation.mutateAsync,
     isUpdatingLead: updateLeadMutation.isPending,
+    deleteLead: deleteLeadMutation.mutateAsync,
+    isDeleting: deleteLeadMutation.isPending,
   };
 }

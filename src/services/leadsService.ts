@@ -96,4 +96,18 @@ export const leadsService = {
     }
     return data;
   },
+
+  /**
+   * Exclui um lead pelo ID
+   */
+  async deleteLead(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message || 'Erro ao excluir o lead.');
+    }
+  },
 };
