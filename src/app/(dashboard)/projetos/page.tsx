@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { Project, Visita } from '@/types/database.types';
+import { downloadCSV } from '@/lib/csvHelper';
 
 const KANBAN_STAGES = [
   'Orçamento',
@@ -123,6 +124,40 @@ export default function ProjectsKanban() {
     }
   };
 
+  const handleDownloadBackup = () => {
+    const headers = [
+      'ID',
+      'Lead ID',
+      'Cliente',
+      'Telefone',
+      'E-mail',
+      'Endereço da Obra',
+      'Cidade',
+      'CEP',
+      'Área (m²)',
+      'Tipo de Serviço',
+      'Status do Projeto',
+      'Valor do Contrato',
+      'Criado Em'
+    ];
+    const rows = listProjects.map(p => [
+      p.id,
+      p.lead_id,
+      p.leads?.nome || '—',
+      p.leads?.telefone || '—',
+      p.leads?.email || '—',
+      p.endereco || p.leads?.endereco_obra || '—',
+      p.leads?.cidade || '—',
+      p.leads?.cep || '—',
+      p.leads?.area_m2 || '—',
+      p.leads?.tipo_servico || '—',
+      p.status_projeto,
+      p.valor_total,
+      p.criado_em
+    ]);
+    downloadCSV(`backup_projetos_${Date.now()}.csv`, headers, rows);
+  };
+
   const totalFaturamento = listProjects.filter(p => !!p.leads).reduce((acc, p) => acc + p.valor_total, 0);
   const totalEmAndamento = listProjects.filter((p) => !!p.leads && ['Orçamento', 'Preparação', 'Instalação', 'Teste de Carga'].includes(p.status_projeto)).length;
   const totalConcluidos = listProjects.filter((p) => !!p.leads && p.status_projeto === 'Concluído').length;
@@ -158,19 +193,31 @@ export default function ProjectsKanban() {
             <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Kanban de Obras</h1>
             <p className="text-sm text-gray-500 mt-1">Acompanhamento das instalações de malhas de aquecimento de piso.</p>
           </div>
-          <div className="relative w-full md:w-72">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={handleDownloadBackup}
+              title="Baixar Backup de Projetos (CSV)"
+              className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 hover:border-orange-300 text-gray-600 hover:text-orange-600 font-bold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-            </span>
-            <input
-              type="text"
-              placeholder="Buscar projeto ou cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all shadow-sm font-medium"
-            />
+              Backup Projetos
+            </button>
+            <div className="relative w-full md:w-72">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar projeto ou cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all shadow-sm font-medium"
+              />
+            </div>
           </div>
         </div>
 

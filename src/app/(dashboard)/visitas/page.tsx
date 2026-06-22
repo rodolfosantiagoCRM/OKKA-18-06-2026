@@ -7,6 +7,7 @@ import ModalPreenchimentoVisita from '@/components/crm/modal-preenchimento-visit
 import ModalAgendamentoVisita from '@/components/crm/modal-agendamento-visita';
 import VisitaCard from '@/components/crm/visita-card';
 import { Visita } from '@/types/database.types';
+import { downloadCSV } from '@/lib/csvHelper';
 
 // Dados simulados de fallback estruturados de forma robusta
 const MOCK_FALLBACK_VISITAS: Visita[] = [
@@ -212,6 +213,18 @@ export default function DashboardVisitas() {
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAgendarModalOpen, setIsAgendarModalOpen] = useState(false);
+
+  const [copiedVisitaId, setCopiedVisitaId] = useState<string | null>(null);
+
+  const handleCopyText = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedVisitaId(id);
+      setTimeout(() => setCopiedVisitaId(null), 2000);
+    } catch (err) {
+      console.error('Falha ao copiar texto:', err);
+    }
+  };
 
   // Toast de feedback
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -453,6 +466,40 @@ export default function DashboardVisitas() {
   const taxaConclusao =
     activeRaw.length > 0 ? Math.round((visitasExecutadas / activeRaw.length) * 100) : 0;
 
+  const handleDownloadBackup = () => {
+    const headers = [
+      'ID',
+      'Projeto ID',
+      'Cliente',
+      'Telefone',
+      'Endereço',
+      'Data da Visita',
+      'Horário',
+      'Status',
+      'Técnico Responsável',
+      'Materiais Planejados / Usados',
+      'Custo Extra',
+      'Observações',
+      'Criado Em'
+    ];
+    const rows = activeRaw.map(v => [
+      v.id,
+      v.project_id,
+      v.projects?.leads?.nome || v.cliente || '—',
+      v.projects?.leads?.telefone || '—',
+      v.projects?.leads?.endereco_obra || v.projects?.endereco || v.endereco || '—',
+      v.data_visita,
+      v.horario,
+      v.status_visita,
+      v.responsaveis_tecnicos?.nome || '—',
+      v.material_usado,
+      v.valor_gasto,
+      v.observacoes,
+      v.criado_em
+    ]);
+    downloadCSV(`backup_visitas_${Date.now()}.csv`, headers, rows);
+  };
+
   if (isLoading && isDbConfigured) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -478,6 +525,7 @@ export default function DashboardVisitas() {
           setStatusFilter={setStatusFilter}
           onAgendarClick={() => setIsAgendarModalOpen(true)}
           atrasadasCount={activeAtrasadas.length}
+          onDownloadBackup={handleDownloadBackup}
         />
 
         {/* Toast de Feedback */}
@@ -607,6 +655,30 @@ export default function DashboardVisitas() {
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12.004 2c-5.518 0-9.996 4.478-9.996 9.996 0 1.764.46 3.426 1.265 4.887l-1.272 4.654 4.761-1.248c1.411.769 3.012 1.207 4.71 1.207 5.517 0 9.996-4.478 9.996-9.996S17.52 2 12.004 2zm5.008 14.337c-.205.577-1.011 1.103-1.602 1.173-.4.048-.922.072-1.485-.11-3.567-1.157-5.908-4.757-6.086-4.992-.178-.235-1.442-1.92-1.442-3.66 0-1.739.905-2.595 1.226-2.946.321-.351.7-.439.932-.439.234 0 .468.002.671.012.208.01.49-.078.766.592.28.681.959 2.333 1.042 2.499.083.165.138.358.028.577-.11.22-.165.358-.33.55-.165.193-.346.43-.495.577-.165.165-.337.345-.145.676.193.33.856 1.411 1.834 2.285.836.745 1.542.977 1.872 1.143.33.165.522.138.718-.087.195-.226.837-.977 1.06-1.312.22-.335.439-.28.742-.165.303.116 1.925.909 2.256 1.074.33.165.55.247.629.385.08.138.08.799-.125 1.376z"/>
                           </svg>
+                        </button>
+                      )}
+                      {tecnicoNome && (
+                        <button
+                          onClick={() => {
+                            const text = `Olá *${tecnicoNome}*,\n\nPassando para lembrar que você tem uma visita técnica *ATRASADA* pendente:\n\n*Cliente:* ${clienteNome}\n*Data Original:* ${dataFormatada}\n*Horário:* ${hora} hs\n*Endereço:* ${endereco}\n${v.observacoes ? `*Observações:* ${v.observacoes}\n` : ''}\nPor favor, atualize o status ou regularize a visita no CRM.`;
+                            handleCopyText(v.id, text);
+                          }}
+                          title={copiedVisitaId === v.id ? "Texto Copiado!" : "Copiar texto para enviar ao técnico"}
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center shrink-0 ${
+                            copiedVisitaId === v.id
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                              : 'bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-300 text-blue-600 hover:text-blue-700'
+                          }`}
+                        >
+                          {copiedVisitaId === v.id ? (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          )}
                         </button>
                       )}
                       <button

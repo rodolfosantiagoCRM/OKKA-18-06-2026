@@ -5,6 +5,7 @@ import { useLeads } from '@/hooks/useLeads';
 import { useProjects } from '@/hooks/useProjects';
 import { Lead } from '@/types/database.types';
 import ModalCadastroLead from '@/components/crm/modal-cadastro-lead';
+import { downloadCSV } from '@/lib/csvHelper';
 
 const MOCK_FALLBACK_LEADS: Lead[] = [
   { id: 'l1', nome: 'Roberto Mendonça', email: 'roberto@email.com', telefone: '(41) 99999-1111', cidade: 'Curitiba', area_m2: 80, status: 'Qualificado', criado_em: '2026-06-08T14:30:00Z', cep: '80240-031' },
@@ -212,6 +213,42 @@ export default function LeadsDashboard() {
     }
   };
 
+  const handleDownloadBackup = () => {
+    const headers = [
+      'ID',
+      'Nome',
+      'E-mail',
+      'Telefone',
+      'Cidade',
+      'CEP',
+      'Número',
+      'Endereço Obra',
+      'Área (m²)',
+      'Tipo de Serviço',
+      'Valor Estimado',
+      'Materiais Previstos',
+      'Status',
+      'Criado Em'
+    ];
+    const rows = listLeads.map(l => [
+      l.id,
+      l.nome,
+      l.email,
+      l.telefone,
+      l.cidade,
+      l.cep,
+      l.numero,
+      l.endereco_obra,
+      l.area_m2,
+      l.tipo_servico,
+      l.valor_estimado,
+      l.materiais_previstos,
+      l.status,
+      l.criado_em
+    ]);
+    downloadCSV(`backup_leads_${Date.now()}.csv`, headers, rows);
+  };
+
   const leadsNovos = listLeads.filter((l) => l.status === 'Novo').length;
 
   return (
@@ -234,6 +271,16 @@ export default function LeadsDashboard() {
                 <span className="text-xs font-bold text-blue-700">{leadsNovos} novos</span>
               </div>
             )}
+            <button
+              onClick={handleDownloadBackup}
+              title="Baixar Backup de Leads (CSV)"
+              className="bg-white hover:bg-gray-50 border border-gray-200 hover:border-orange-300 text-gray-600 hover:text-orange-600 font-bold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Backup Leads
+            </button>
             <button
               onClick={() => setIsAddLeadModalOpen(true)}
               className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"

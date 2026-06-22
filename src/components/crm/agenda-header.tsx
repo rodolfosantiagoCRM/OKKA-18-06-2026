@@ -7,6 +7,7 @@ interface AgendaHeaderProps {
   setStatusFilter: (val: string) => void;
   onAgendarClick: () => void;
   atrasadasCount?: number;
+  onDownloadBackup?: () => void;
 }
 
 export default function AgendaHeader({
@@ -16,6 +17,7 @@ export default function AgendaHeader({
   setStatusFilter,
   onAgendarClick,
   atrasadasCount = 0,
+  onDownloadBackup,
 }: AgendaHeaderProps) {
   return (
     <div className="space-y-7">
@@ -28,15 +30,29 @@ export default function AgendaHeader({
           <h1 className="text-3xl font-black tracking-tight mt-2 text-gray-900">Gestão de Visitas Técnicas</h1>
           <p className="text-sm text-gray-500 mt-1">Controle de ativações de piso radiante e testes de carga.</p>
         </div>
-        <button
-          onClick={onAgendarClick}
-          className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2 self-start md:self-auto animate-fade-in"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-          Agendar Visita
-        </button>
+        <div className="flex items-center gap-3 self-start md:self-end">
+          {onDownloadBackup && (
+            <button
+              onClick={onDownloadBackup}
+              title="Baixar Backup de Visitas (CSV)"
+              className="bg-white hover:bg-gray-50 border border-gray-200 hover:border-orange-300 text-gray-600 hover:text-orange-600 font-bold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Backup Visitas
+            </button>
+          )}
+          <button
+            onClick={onAgendarClick}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2 animate-fade-in"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            Agendar Visita
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}

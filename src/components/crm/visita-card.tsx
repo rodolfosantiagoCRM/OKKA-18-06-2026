@@ -51,6 +51,15 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
      visita.tecnico_id === 't2' ? '(41) 97777-5678' :
      visita.tecnico_id === 't3' ? '(41) 99999-1111' : null);
 
+  const [copied, setCopied] = React.useState(false);
+
+  const getNotificationText = () => {
+    const dateParts = (visita.data_visita || '').split('-');
+    const dataFormatada = dateParts.length === 3 ? dateParts.reverse().join('/') : '—';
+    const horario = visita.horario ? visita.horario.substring(0, 5) : '—';
+    return `Olá *${tecnicoNome || 'Técnico'}*,\n\nPassando para lembrar do seu agendamento de visita técnica:\n\n*Cliente:* ${clienteNome}\n*Data:* ${dataFormatada}\n*Horário:* ${horario} hs\n*Endereço:* ${endereco || 'Não informado'}\n${visita.observacoes ? `*Observações:* ${visita.observacoes}\n` : ''}\nBom trabalho!`;
+  };
+
   const handleWhatsAppAlert = (e: React.MouseEvent) => {
     e.stopPropagation(); // Evita abrir o modal de preenchimento
     if (!tecnicoTelefone) {
@@ -63,13 +72,21 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
       ? `55${cleanPhone}` 
       : cleanPhone;
 
-    const dateParts = (visita.data_visita || '').split('-');
-    const dataFormatada = dateParts.length === 3 ? dateParts.reverse().join('/') : '—';
-    const horario = visita.horario ? visita.horario.substring(0, 5) : '—';
-    const text = `Olá *${tecnicoNome}*,\n\nPassando para lembrar do seu agendamento de visita técnica:\n\n*Cliente:* ${clienteNome}\n*Data:* ${dataFormatada}\n*Horário:* ${horario} hs\n*Endereço:* ${endereco}\n${visita.observacoes ? `*Observações:* ${visita.observacoes}\n` : ''}\nBom trabalho!`;
-
+    const text = getNotificationText();
     const url = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+  };
+
+  const handleCopyText = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita abrir o modal de preenchimento
+    const text = getNotificationText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Falha ao copiar texto:', err);
+    }
   };
 
   const isAtrasado = checkIsAtrasado(visita.data_visita, visita.horario, visita.status_visita);
@@ -173,6 +190,27 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12.004 2c-5.518 0-9.996 4.478-9.996 9.996 0 1.764.46 3.426 1.265 4.887l-1.272 4.654 4.761-1.248c1.411.769 3.012 1.207 4.71 1.207 5.517 0 9.996-4.478 9.996-9.996S17.52 2 12.004 2zm5.008 14.337c-.205.577-1.011 1.103-1.602 1.173-.4.048-.922.072-1.485-.11-3.567-1.157-5.908-4.757-6.086-4.992-.178-.235-1.442-1.92-1.442-3.66 0-1.739.905-2.595 1.226-2.946.321-.351.7-.439.932-.439.234 0 .468.002.671.012.208.01.49-.078.766.592.28.681.959 2.333 1.042 2.499.083.165.138.358.028.577-.11.22-.165.358-.33.55-.165.193-.346.43-.495.577-.165.165-.337.345-.145.676.193.33.856 1.411 1.834 2.285.836.745 1.542.977 1.872 1.143.33.165.522.138.718-.087.195-.226.837-.977 1.06-1.312.22-.335.439-.28.742-.165.303.116 1.925.909 2.256 1.074.33.165.55.247.629.385.08.138.08.799-.125 1.376z"/>
             </svg>
+          </button>
+        )}
+        {tecnicoNome && (
+          <button
+            onClick={handleCopyText}
+            title={copied ? "Texto Copiado!" : "Copiar texto para enviar ao técnico"}
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer shrink-0 inline-flex items-center justify-center ${
+              copied
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                : 'bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-300 text-blue-600 hover:text-blue-700'
+            }`}
+          >
+            {copied ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            )}
           </button>
         )}
         {onDelete && (
