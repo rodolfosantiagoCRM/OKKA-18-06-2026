@@ -8,12 +8,17 @@ interface VisitaCardProps {
   onDelete?: (id: string) => void;
 }
 
-function checkIsAtrasado(dateStr: string, timeStr: string, status: string): boolean {
+function checkIsAtrasado(dateStr: string | null | undefined, timeStr: string | null | undefined, status: string): boolean {
   if (status !== 'Agendada') return false;
+  if (!dateStr || !timeStr) return false;
+  const dateParts = dateStr.split('-');
+  const timeParts = timeStr.split(':');
+  if (dateParts.length !== 3 || timeParts.length < 1) return false;
+  
   const now = new Date();
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const visitDate = new Date(y, m - 1, d, hours, minutes);
+  const [y, m, d] = dateParts.map(Number);
+  const [hours, minutes] = timeParts.map(Number);
+  const visitDate = new Date(y, m - 1, d, hours || 0, minutes || 0);
   return visitDate < now;
 }
 
@@ -58,8 +63,9 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
       ? `55${cleanPhone}` 
       : cleanPhone;
 
-    const dataFormatada = visita.data_visita.split('-').reverse().join('/');
-    const horario = visita.horario.substring(0, 5);
+    const dateParts = (visita.data_visita || '').split('-');
+    const dataFormatada = dateParts.length === 3 ? dateParts.reverse().join('/') : '—';
+    const horario = visita.horario ? visita.horario.substring(0, 5) : '—';
     const text = `Olá *${tecnicoNome}*,\n\nPassando para lembrar do seu agendamento de visita técnica:\n\n*Cliente:* ${clienteNome}\n*Data:* ${dataFormatada}\n*Horário:* ${horario} hs\n*Endereço:* ${endereco}\n${visita.observacoes ? `*Observações:* ${visita.observacoes}\n` : ''}\nBom trabalho!`;
 
     const url = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(text)}`;
@@ -105,13 +111,13 @@ export default function VisitaCard({ visita, onOpenModal, showDate = false, onDe
         {/* Badge de horário */}
         <div className="shrink-0 text-center">
           <div className="bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 min-w-[60px]">
-            {showDate && (
+            {showDate && visita.data_visita && (
               <p className="text-[9px] font-bold text-orange-400 uppercase tracking-wider">
-                {visita.data_visita.split('-').reverse().slice(0, 2).join('/')}
+                {(visita.data_visita || '').split('-').reverse().slice(0, 2).join('/')}
               </p>
             )}
             <p className="text-sm font-black text-orange-600 font-mono leading-none">
-              {visita.horario.substring(0, 5)}
+              {(visita.horario || '').substring(0, 5) || '—'}
             </p>
             <p className="text-[8px] text-orange-400 font-semibold">hs</p>
           </div>

@@ -530,14 +530,15 @@ export default function DashboardVisitas() {
                   (v.tecnico_id === 't1' ? '(41) 98888-1234' :
                    v.tecnico_id === 't2' ? '(41) 97777-5678' :
                    v.tecnico_id === 't3' ? '(41) 99999-1111' : null);
-                const [yr, mo, dy] = v.data_visita.split('-');
-                const dataFormatada = `${dy}/${mo}/${yr}`;
+                const dateParts = (v.data_visita || '').split('-');
+                const [yr, mo, dy] = dateParts.length === 3 ? dateParts : ['', '', ''];
+                const dataFormatada = yr && mo && dy ? `${dy}/${mo}/${yr}` : '—';
                 const hora = v.horario?.substring(0, 5) || '—';
                 
                 // Calcular dias de atraso
                 const hoje = new Date();
-                const dataVisita = new Date(Number(yr), Number(mo) - 1, Number(dy));
-                const diasAtraso = Math.floor((hoje.getTime() - dataVisita.getTime()) / (1000 * 60 * 60 * 24));
+                const dataVisita = yr && mo && dy ? new Date(Number(yr), Number(mo) - 1, Number(dy)) : null;
+                const diasAtraso = dataVisita ? Math.floor((hoje.getTime() - dataVisita.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
                 return (
                   <div

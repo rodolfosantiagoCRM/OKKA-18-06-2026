@@ -57,7 +57,10 @@ export default function ModalAgendamentoVisita({
 
   const projects = isDbConfigured ? dbProjects : MOCK_FALLBACK_PROJECTS;
 
-  const [projectId, setProjectId] = useState(() => (projects.length > 0 ? projects[0].id : ''));
+  // Filtra apenas projetos que possuem um lead válido e ativo (evita órfãos de exclusão)
+  const activeProjects = projects.filter((p) => !!p.leads);
+
+  const [projectId, setProjectId] = useState(() => (activeProjects.length > 0 ? activeProjects[0].id : ''));
   const [dataVisita, setDataVisita] = useState(getTodayStr);
   const [horario, setHorario] = useState('09:00');
   const [tecnicoId, setTecnicoId] = useState('');
@@ -75,11 +78,11 @@ export default function ModalAgendamentoVisita({
   const responsaveis = isDbConfigured ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
 
   // Ajusta o projectId se a lista de projetos carregar depois
-  const [prevProjects, setPrevProjects] = useState(projects);
-  if (projects !== prevProjects) {
-    setPrevProjects(projects);
-    if (projects.length > 0 && (!projectId || !projects.some(p => p.id === projectId))) {
-      setProjectId(projects[0].id);
+  const [prevProjects, setPrevProjects] = useState(activeProjects);
+  if (activeProjects !== prevProjects) {
+    setPrevProjects(activeProjects);
+    if (activeProjects.length > 0 && (!projectId || !activeProjects.some(p => p.id === projectId))) {
+      setProjectId(activeProjects[0].id);
     }
   }
 
@@ -182,14 +185,17 @@ export default function ModalAgendamentoVisita({
                 >
                   {isLoadingProjects && dbProjects.length === 0 ? (
                     <option value="">Carregando projetos...</option>
-                  ) : projects.length === 0 ? (
+                  ) : activeProjects.length === 0 ? (
                     <option value="">Nenhum projeto ativo disponível</option>
                   ) : (
-                    projects.map((proj) => (
-                      <option key={proj.id} value={proj.id}>
-                        {proj.leads?.nome || 'Cliente Sem Nome'} — {proj.endereco.length > 38 ? `${proj.endereco.substring(0, 38)}...` : proj.endereco}
-                      </option>
-                    ))
+                    activeProjects.map((proj) => {
+                      const end = proj.endereco || '';
+                      return (
+                        <option key={proj.id} value={proj.id}>
+                          {proj.leads?.nome || 'Cliente Sem Nome'} — {end.length > 38 ? `${end.substring(0, 38)}...` : end}
+                        </option>
+                      );
+                    })
                   )}
                 </select>
                 <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
