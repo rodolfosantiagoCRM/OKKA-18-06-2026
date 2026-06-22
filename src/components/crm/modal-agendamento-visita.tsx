@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useResponsaveis } from '@/hooks/useResponsaveis';
 import { Project } from '@/types/database.types';
@@ -58,9 +58,11 @@ export default function ModalAgendamentoVisita({
   const projects = isDbConfigured ? dbProjects : MOCK_FALLBACK_PROJECTS;
 
   // Filtra apenas projetos que possuem um lead válido e ativo (evita órfãos de exclusão)
-  const activeProjects = projects.filter((p) => !!p.leads);
+  const activeProjects = useMemo(() => {
+    return projects.filter((p) => !!p.leads);
+  }, [projects]);
 
-  const [projectId, setProjectId] = useState(() => (activeProjects.length > 0 ? activeProjects[0].id : ''));
+  const [projectId, setProjectId] = useState('');
   const [dataVisita, setDataVisita] = useState(getTodayStr);
   const [horario, setHorario] = useState('09:00');
   const [tecnicoId, setTecnicoId] = useState('');
@@ -78,13 +80,11 @@ export default function ModalAgendamentoVisita({
   const responsaveis = isDbConfigured ? dbResponsaveis : MOCK_FALLBACK_TECNICOS;
 
   // Ajusta o projectId se a lista de projetos carregar depois
-  const [prevProjects, setPrevProjects] = useState(activeProjects);
-  if (activeProjects !== prevProjects) {
-    setPrevProjects(activeProjects);
+  useEffect(() => {
     if (activeProjects.length > 0 && (!projectId || !activeProjects.some(p => p.id === projectId))) {
       setProjectId(activeProjects[0].id);
     }
-  }
+  }, [activeProjects, projectId]);
 
   if (!isOpen) return null;
 
