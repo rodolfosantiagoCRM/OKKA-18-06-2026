@@ -71,7 +71,25 @@ export async function getGroupedVisitas() {
   const visits = (data || []) as unknown as Visita[];
 
   // Obter datas corretas no fuso horário do Brasil (America/Sao_Paulo)
-  const now = new Date();
+  const getBrazilNow = () => {
+    const d = new Date();
+    const spString = d.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    return new Date(spString);
+  };
+
+  const brNow = getBrazilNow();
+
+  const isVisitAtrasada = (v: Visita, nowBr: Date) => {
+    if (v.status_visita !== 'Agendada') return false;
+    if (!v.data_visita || !v.horario) return false;
+    
+    const [y, m, d] = v.data_visita.split('-').map(Number);
+    const [hours, minutes] = v.horario.split(':').map(Number);
+    
+    const visitDate = new Date(y, m - 1, d, hours || 0, minutes || 0);
+    return visitDate < nowBr;
+  };
+
   const formatTZ = (d: Date) => {
     const formatted = new Intl.DateTimeFormat('pt-BR', {
       timeZone: 'America/Sao_Paulo',
@@ -83,20 +101,20 @@ export async function getGroupedVisitas() {
     return `${year}-${month}-${day}`;
   };
 
-  const hojeStr = formatTZ(now);
+  const hojeStr = formatTZ(brNow);
 
-  const tomorrow = new Date(now);
+  const tomorrow = new Date(brNow);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const amanhaStr = formatTZ(tomorrow);
 
-  // IMPORTANTE: atrasadas = status 'Agendada' com data ANTERIOR a hoje (não aparecem em "Hoje")
-  // hoje = visitas do dia de hoje (apenas status 'Agendada')
-  // amanha = visitas de amanhã (apenas status 'Agendada')
-  // proximas = visitas após amanhã (apenas status 'Agendada')
-  const atrasadas = visits.filter(v => v.data_visita < hojeStr && v.status_visita === 'Agendada');
-  const hoje = visits.filter(v => v.data_visita === hojeStr && v.status_visita === 'Agendada');
-  const amanha = visits.filter(v => v.data_visita === amanhaStr && v.status_visita === 'Agendada');
-  const proximas = visits.filter(v => v.data_visita > amanhaStr && v.status_visita === 'Agendada');
+  // IMPORTANTE: atrasadas = status 'Agendada' com data/hora anterior a agora (fuso SP)
+  // hoje = visitas do dia de hoje (apenas status 'Agendada' e que ainda vão ocorrer)
+  // amanha = visitas de amanhã (apenas status 'Agendada' e que ainda vão ocorrer)
+  // proximas = visitas após amanhã (apenas status 'Agendada' e que ainda vão ocorrer)
+  const atrasadas = visits.filter(v => v.status_visita === 'Agendada' && isVisitAtrasada(v, brNow));
+  const hoje = visits.filter(v => v.data_visita === hojeStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
+  const amanha = visits.filter(v => v.data_visita === amanhaStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
+  const proximas = visits.filter(v => v.data_visita > amanhaStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
 
   return {
     hojeStr,

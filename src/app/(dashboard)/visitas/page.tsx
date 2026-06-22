@@ -326,6 +326,25 @@ export default function DashboardVisitas() {
 
   // Agrupamento em memória dos dados locais quando o banco não estiver configurado
   const groupedFallback = useMemo(() => {
+    const getBrazilNow = () => {
+      const d = new Date();
+      const spString = d.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+      return new Date(spString);
+    };
+
+    const brNow = getBrazilNow();
+
+    const isVisitAtrasada = (v: Visita, nowBr: Date) => {
+      if (v.status_visita !== 'Agendada') return false;
+      if (!v.data_visita || !v.horario) return false;
+      
+      const [y, m, d] = v.data_visita.split('-').map(Number);
+      const [hours, minutes] = v.horario.split(':').map(Number);
+      
+      const visitDate = new Date(y, m - 1, d, hours || 0, minutes || 0);
+      return visitDate < nowBr;
+    };
+
     const list = localVisitasFallback.map((v) => {
       let date = v.data_visita;
       if (!date) {
@@ -349,10 +368,10 @@ export default function DashboardVisitas() {
       return { ...v, data_visita: date };
     });
 
-    const atrasadas = list.filter((v) => v.data_visita < hojeStr && v.status_visita === 'Agendada');
-    const hoje = list.filter((v) => v.data_visita === hojeStr && v.status_visita === 'Agendada');
-    const amanha = list.filter((v) => v.data_visita === amanhaStr && v.status_visita === 'Agendada');
-    const proximas = list.filter((v) => v.data_visita > amanhaStr && v.status_visita === 'Agendada');
+    const atrasadas = list.filter((v) => v.status_visita === 'Agendada' && isVisitAtrasada(v, brNow));
+    const hoje = list.filter((v) => v.data_visita === hojeStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
+    const amanha = list.filter((v) => v.data_visita === amanhaStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
+    const proximas = list.filter((v) => v.data_visita > amanhaStr && v.status_visita === 'Agendada' && !isVisitAtrasada(v, brNow));
 
     return { atrasadas, hoje, amanha, proximas, raw: list };
   }, [localVisitasFallback, hojeStr, amanhaStr]);

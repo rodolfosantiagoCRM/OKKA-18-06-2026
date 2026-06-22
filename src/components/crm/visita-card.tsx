@@ -130,7 +130,7 @@ export default function VisitaCard({
   return (
     <div
       onClick={() => onOpenModal(visita)}
-      className="bg-white hover:bg-gray-50 border border-gray-100 hover:border-orange-200 hover:shadow-md p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group shadow-sm"
+      className="bg-white hover:bg-gray-50 border border-gray-100 hover:border-orange-200 hover:shadow-md p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 group shadow-sm"
     >
       {/* Lado Esquerdo */}
       <div className="flex items-start gap-4 flex-1 w-full min-w-0">
@@ -151,13 +151,13 @@ export default function VisitaCard({
 
         {/* Info */}
         <div className="flex-1 min-w-0 space-y-1.5">
-          <h4 className="font-black text-gray-900 group-hover:text-orange-600 transition-colors text-sm md:text-base leading-tight">
+          <h4 className="font-black text-gray-900 group-hover:text-orange-600 transition-colors text-sm lg:text-base leading-tight">
             {clienteNome}
           </h4>
 
           {endereco && (
-            <div className="flex items-start md:items-center gap-2">
-              <p className="text-xs text-gray-400 leading-relaxed break-words flex-1 md:truncate">{endereco}</p>
+            <div className="flex items-start lg:items-center gap-2">
+              <p className="text-xs text-gray-400 leading-relaxed break-words flex-1 lg:truncate">{endereco}</p>
               <a
                 href={googleMapsUrl}
                 target="_blank"
@@ -188,7 +188,7 @@ export default function VisitaCard({
       </div>
 
       {/* Lado Direito */}
-      <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t border-gray-100 md:border-t-0 pt-3 md:pt-0">
+      <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end border-t border-gray-100 lg:border-t-0 pt-3 lg:pt-0">
         {statusBadge}
         {visita.pdf_proposta_url && (
           <a
@@ -285,7 +285,7 @@ export default function VisitaCard({
           </button>
         )}
         <svg
-          className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors hidden md:block"
+          className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors hidden lg:block"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
