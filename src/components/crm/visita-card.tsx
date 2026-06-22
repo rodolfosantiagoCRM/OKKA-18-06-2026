@@ -8,6 +8,7 @@ interface VisitaCardProps {
   onDelete?: (id: string) => void;
   onUpdateStatus?: (id: string, status: 'Realizada' | 'Cancelada') => Promise<void>;
   canManageStatus?: boolean;
+  layout?: 'grid' | 'list';
 }
 
 function checkIsAtrasado(dateStr: string | null | undefined, timeStr: string | null | undefined, status: string): boolean {
@@ -30,7 +31,8 @@ export default function VisitaCard({
   showDate = false,
   onDelete,
   onUpdateStatus,
-  canManageStatus = false
+  canManageStatus = false,
+  layout = 'list'
 }: VisitaCardProps) {
   const clienteNome = visita.projects?.leads?.nome || visita.cliente;
 
@@ -127,10 +129,14 @@ export default function VisitaCard({
     </span>
   );
 
+  const isGrid = layout === 'grid';
+
   return (
     <div
       onClick={() => onOpenModal(visita)}
-      className="bg-white hover:bg-gray-50 border border-gray-100 hover:border-orange-200 hover:shadow-md p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 group shadow-sm"
+      className={`bg-white hover:bg-gray-50 border border-gray-100 hover:border-orange-200 hover:shadow-md p-5 rounded-2xl cursor-pointer transition-all duration-200 flex justify-between items-start gap-4 group shadow-sm ${
+        isGrid ? 'flex-col' : 'flex-col lg:flex-row lg:items-center'
+      }`}
     >
       {/* Lado Esquerdo */}
       <div className="flex items-start gap-4 flex-1 w-full min-w-0">
@@ -188,7 +194,11 @@ export default function VisitaCard({
       </div>
 
       {/* Lado Direito */}
-      <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end border-t border-gray-100 lg:border-t-0 pt-3 lg:pt-0">
+      <div className={`flex items-center gap-3 w-full justify-between ${
+        isGrid
+          ? 'border-t border-gray-100 pt-3 mt-1'
+          : 'lg:w-auto lg:justify-end lg:border-t-0 lg:pt-0 border-t border-gray-100 pt-3'
+      }`}>
         {statusBadge}
         {visita.pdf_proposta_url && (
           <a

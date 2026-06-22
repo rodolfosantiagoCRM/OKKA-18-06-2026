@@ -1088,7 +1088,7 @@ export default function DashboardVisitas() {
                     </div>
                   ) : (
                     hojeFiltered.map((v) => (
-                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} />
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} layout="grid" />
                     ))
                   )}
                 </div>
@@ -1118,7 +1118,7 @@ export default function DashboardVisitas() {
                     </div>
                   ) : (
                     amanhaFiltered.map((v) => (
-                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} />
+                      <VisitaCard key={v.id} visita={v} onOpenModal={handleOpenModal} onDelete={handleDeleteVisita} canManageStatus={canManageStatus} onUpdateStatus={handleUpdateStatus} layout="grid" />
                     ))
                   )}
                 </div>
