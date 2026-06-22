@@ -42,6 +42,8 @@ export function useLeads() {
     mutationFn: (id: string) => leadsService.deleteLead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['visitas'] });
     },
   });
 
