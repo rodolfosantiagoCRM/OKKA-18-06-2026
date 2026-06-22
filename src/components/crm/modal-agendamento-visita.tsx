@@ -86,7 +86,7 @@ export default function ModalAgendamentoVisita({
   }, [projects]);
 
   // Tab State
-  const [tab, setTab] = useState<'existente' | 'novo'>('existente');
+  const [tab, setTab] = useState<'existente' | 'novo'>('novo');
 
   // Campos de Agendamento Existente
   const [projectId, setProjectId] = useState('');
@@ -392,17 +392,6 @@ export default function ModalAgendamentoVisita({
         <div className="flex border-b border-gray-100 shrink-0">
           <button
             type="button"
-            onClick={() => { setTab('existente'); setErrorMessage(''); }}
-            className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-all cursor-pointer ${
-              tab === 'existente'
-                ? 'border-orange-500 text-orange-600 font-black'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            Cliente Cadastrado
-          </button>
-          <button
-            type="button"
             onClick={() => { setTab('novo'); setErrorMessage(''); }}
             className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-all cursor-pointer ${
               tab === 'novo'
@@ -411,6 +400,17 @@ export default function ModalAgendamentoVisita({
             }`}
           >
             Novo Cliente (Sem Lead)
+          </button>
+          <button
+            type="button"
+            onClick={() => { setTab('existente'); setErrorMessage(''); }}
+            className={`flex-1 py-3 text-center text-sm font-bold border-b-2 transition-all cursor-pointer ${
+              tab === 'existente'
+                ? 'border-orange-500 text-orange-600 font-black'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            Cliente Cadastrado
           </button>
         </div>
 
