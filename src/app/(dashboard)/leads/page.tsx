@@ -74,7 +74,7 @@ export default function LeadsDashboard() {
 
   const handleOpenQualifyModal = (lead: Lead) => {
     setSelectedLead(lead);
-    setProjectAddress(`${lead.cidade} - PR, Brasil`);
+    setProjectAddress(lead.endereco_obra || `${lead.cidade} - PR, Brasil`);
     setProjectValue('15000');
     setIsModalOpen(true);
   };
@@ -134,6 +134,8 @@ export default function LeadsDashboard() {
     observacoes?: string | null;
     status: Lead['status'];
     cep?: string | null;
+    numero?: string | null;
+    tipo_servico?: string | null;
   }) => {
     try {
       if (leadToEdit) {
@@ -172,6 +174,8 @@ export default function LeadsDashboard() {
             materiais_previstos: leadData.materiais_previstos,
             observacoes: leadData.observacoes,
             cep: leadData.cep,
+            numero: leadData.numero,
+            tipo_servico: leadData.tipo_servico,
           };
           setLocalLeadsFallback((prev) => [newRecord, ...prev]);
         }
@@ -362,6 +366,13 @@ export default function LeadsDashboard() {
                                   <div className="pl-5.5 space-y-1">
                                     <p className="font-semibold text-gray-950">{lead.endereco_obra || 'Endereço da obra não informado'}</p>
                                     <p className="text-gray-500">Cidade: {lead.cidade}</p>
+                                    {lead.tipo_servico && (
+                                      <div className="mt-2">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 border border-orange-200 text-orange-700">
+                                          Serviço: {lead.tipo_servico}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 

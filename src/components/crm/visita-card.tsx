@@ -19,7 +19,20 @@ function checkIsAtrasado(dateStr: string, timeStr: string, status: string): bool
 
 export default function VisitaCard({ visita, onOpenModal, showDate = false, onDelete }: VisitaCardProps) {
   const clienteNome = visita.projects?.leads?.nome || visita.cliente;
-  const endereco = visita.projects?.endereco || visita.endereco;
+
+  // Constrói o endereço completo utilizando os dados do cadastro do Lead se disponíveis,
+  // garantindo que o Google Maps encontre a localização correta com base na Rua/Número, Cidade e CEP.
+  let enderecoObraCompleto = '';
+  if (visita.projects?.leads) {
+    const lead = visita.projects.leads;
+    const parts = [];
+    if (lead.endereco_obra) parts.push(lead.endereco_obra);
+    if (lead.cidade) parts.push(lead.cidade);
+    if (lead.cep) parts.push(lead.cep);
+    enderecoObraCompleto = parts.join(', ');
+  }
+
+  const endereco = enderecoObraCompleto || visita.projects?.endereco || visita.endereco;
 
   const tecnicoNome =
     visita.responsaveis_tecnicos?.nome ||

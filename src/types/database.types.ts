@@ -19,6 +19,8 @@ export interface Lead {
   materiais_previstos?: string[] | null;
   observacoes?: string | null;
   cep?: string | null;
+  numero?: string | null;
+  tipo_servico?: string | null;
 }
 
 export interface Project {

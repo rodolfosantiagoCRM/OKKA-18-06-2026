@@ -25,9 +25,88 @@ interface ModalCadastroLeadProps {
     observacoes?: string | null;
     status: Lead['status'];
     cep?: string | null;
+    numero?: string | null;
+    tipo_servico?: string | null;
   }) => Promise<void>;
   isSaving: boolean;
   leadToEdit?: Lead | null;
+}
+
+function parseEndereco(enderecoCompleto: string) {
+  if (!enderecoCompleto) {
+    return { rua: '', numero: '', complemento: '', bairro: '' };
+  }
+
+  let rua = '';
+  let numero = '';
+  let complemento = '';
+  let bairro = '';
+
+  const isProbablyNumber = (str: string) => {
+    const clean = str.trim().toLowerCase();
+    return /\d/.test(clean) || ['s/n', 'sn', 'sem número', 'sem numero', 'casa', 'lote'].some(v => clean.includes(v));
+  };
+
+  if (enderecoCompleto.includes(' - ')) {
+    const partes = enderecoCompleto.split(/\s*-\s*/);
+    const ruaENumero = partes[0] || '';
+    
+    if (partes.length === 2) {
+      bairro = partes[1] || '';
+    } else if (partes.length >= 3) {
+      complemento = partes[1] || '';
+      bairro = partes.slice(2).join(' - ') || '';
+    }
+
+    if (ruaENumero.includes(',')) {
+      const idx = ruaENumero.lastIndexOf(',');
+      rua = ruaENumero.substring(0, idx).trim();
+      numero = ruaENumero.substring(idx + 1).trim();
+    } else {
+      rua = ruaENumero;
+    }
+  } else {
+    const partes = enderecoCompleto.split(/\s*,\s*/);
+    if (partes.length === 1) {
+      rua = partes[0];
+    } else if (partes.length === 2) {
+      rua = partes[0];
+      if (isProbablyNumber(partes[1])) {
+        numero = partes[1];
+      } else {
+        bairro = partes[1];
+      }
+    } else if (partes.length === 3) {
+      rua = partes[0];
+      numero = partes[1];
+      bairro = partes[2];
+    } else {
+      rua = partes[0];
+      numero = partes[1];
+      bairro = partes[2];
+      complemento = partes.slice(3).join(', ');
+    }
+  }
+
+  return { rua, numero, complemento, bairro };
+}
+
+function formatEndereco(rua: string, numero: string, complemento: string, bairro: string) {
+  let parts: string[] = [];
+  if (rua.trim()) {
+    let ruaStr = rua.trim();
+    if (numero.trim()) {
+      ruaStr += `, ${numero.trim()}`;
+    }
+    parts.push(ruaStr);
+  }
+  if (complemento.trim()) {
+    parts.push(complemento.trim());
+  }
+  if (bairro.trim()) {
+    parts.push(bairro.trim());
+  }
+  return parts.join(' - ');
 }
 
 export default function ModalCadastroLead({
@@ -46,10 +125,14 @@ export default function ModalCadastroLead({
 
   // Novos campos adicionados para o cadastro completo
   const [enderecoObra, setEnderecoObra] = useState('');
+  const [numeroObra, setNumeroObra] = useState('');
+  const [complementoObra, setComplementoObra] = useState('');
+  const [bairroObra, setBairroObra] = useState('');
   const [valorEstimado, setValorEstimado] = useState('15000');
   const [materiaisPrevistos, setMateriaisPrevistos] = useState<string[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [cep, setCep] = useState('');
+  const [tipoServico, setTipoServico] = useState('');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
 
   // Estados de Materiais Dinâmicos
@@ -73,11 +156,16 @@ export default function ModalCadastroLead({
         setCidade(leadToEdit.cidade || 'Curitiba');
         setAreaM2(leadToEdit.area_m2 ? String(leadToEdit.area_m2) : '');
         setStatus(leadToEdit.status || 'Novo');
-        setEnderecoObra(leadToEdit.endereco_obra || '');
+        const parsed = parseEndereco(leadToEdit.endereco_obra || '');
+        setEnderecoObra(parsed.rua);
+        setNumeroObra(parsed.numero);
+        setComplementoObra(parsed.complemento);
+        setBairroObra(parsed.bairro);
         setValorEstimado(leadToEdit.valor_estimado ? String(leadToEdit.valor_estimado) : '');
         setMateriaisPrevistos(leadToEdit.materiais_previstos || []);
         setObservacoes(leadToEdit.observacoes || '');
         setCep(leadToEdit.cep || '');
+        setTipoServico(leadToEdit.tipo_servico || '');
       } else {
         setNome('');
         setEmail('');
@@ -86,10 +174,14 @@ export default function ModalCadastroLead({
         setAreaM2('');
         setStatus('Novo');
         setEnderecoObra('');
+        setNumeroObra('');
+        setComplementoObra('');
+        setBairroObra('');
         setValorEstimado('15000');
         setMateriaisPrevistos([]);
         setObservacoes('');
         setCep('');
+        setTipoServico('');
       }
       setErrorMessage('');
     }
@@ -114,10 +206,17 @@ export default function ModalCadastroLead({
             setCidade(data.localidade);
           }
           if (data.logradouro) {
-            const rua = data.logradouro;
-            const bairro = data.bairro ? `, ${data.bairro}` : '';
-            setEnderecoObra(`${rua}${bairro}`);
+            setEnderecoObra(data.logradouro);
+          } else {
+            setEnderecoObra('');
           }
+          if (data.bairro) {
+            setBairroObra(data.bairro);
+          } else {
+            setBairroObra('');
+          }
+          setNumeroObra('');
+          setComplementoObra('');
         }
       } catch (err) {
         console.error('Erro ao buscar CEP:', err);
@@ -235,7 +334,9 @@ export default function ModalCadastroLead({
         telefone: telefone.trim(),
         cidade: cityCapitalize(cidade.trim()),
         area_m2: areaM2 ? parseFloat(areaM2) : null,
-        endereco_obra: enderecoObra.trim() || null,
+        endereco_obra: formatEndereco(enderecoObra, numeroObra, complementoObra, bairroObra) || null,
+        numero: numeroObra.trim() || null,
+        tipo_servico: tipoServico || null,
         valor_estimado: valorEstimado ? parseFloat(valorEstimado) : null,
         materiais_previstos: materiaisPrevistos,
         observacoes: observacoes.trim() || null,
@@ -369,8 +470,8 @@ export default function ModalCadastroLead({
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5 sm:col-span-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                  <div className="space-y-1.5 sm:col-span-3">
                     <label htmlFor="cep" className={labelClass}>CEP</label>
                     <div className="relative">
                       <input
@@ -392,14 +493,52 @@ export default function ModalCadastroLead({
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label htmlFor="endereco_obra" className={labelClass}>Endereço Completo da Obra</label>
+                  <div className="space-y-1.5 sm:col-span-9">
+                    <label htmlFor="endereco_rua" className={labelClass}>Endereço (Rua, Avenida, etc.)</label>
                     <input
                       type="text"
-                      id="endereco_obra"
-                      placeholder="Ex: Rua das Palmeiras, 405 - Condomínio Royal"
+                      id="endereco_rua"
+                      placeholder="Ex: Rua das Palmeiras"
                       value={enderecoObra}
                       onChange={(e) => setEnderecoObra(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                  <div className="space-y-1.5 sm:col-span-3">
+                    <label htmlFor="endereco_numero" className={labelClass}>Número</label>
+                    <input
+                      type="text"
+                      id="endereco_numero"
+                      placeholder="Ex: 405"
+                      value={numeroObra}
+                      onChange={(e) => setNumeroObra(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-5">
+                    <label htmlFor="endereco_complemento" className={labelClass}>Complemento</label>
+                    <input
+                      type="text"
+                      id="endereco_complemento"
+                      placeholder="Ex: Apto 102 / Bloco B"
+                      value={complementoObra}
+                      onChange={(e) => setComplementoObra(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-4">
+                    <label htmlFor="endereco_bairro" className={labelClass}>Bairro</label>
+                    <input
+                      type="text"
+                      id="endereco_bairro"
+                      placeholder="Ex: Centro"
+                      value={bairroObra}
+                      onChange={(e) => setBairroObra(e.target.value)}
                       className={inputClass}
                     />
                   </div>
@@ -443,6 +582,29 @@ export default function ModalCadastroLead({
                         <option value="Em Contato">Em Contato</option>
                         <option value="Qualificado">Qualificado (Gera Obra)</option>
                         <option value="Perdido">Perdido</option>
+                      </select>
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="tipo_servico" className={labelClass}>Tipo de Serviço</label>
+                    <div className="relative">
+                      <select
+                        id="tipo_servico"
+                        value={tipoServico}
+                        onChange={(e) => setTipoServico(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="" disabled>Selecione um serviço</option>
+                        <option value="Instalação Sistemas Solares">Instalação Sistemas Solares</option>
+                        <option value="Limpeza de placas Solares">Limpeza de placas Solares</option>
+                        <option value="Aquecimento de piso">Aquecimento de piso</option>
+                        <option value="Carregamento Veicular">Carregamento Veicular</option>
                       </select>
                       <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />

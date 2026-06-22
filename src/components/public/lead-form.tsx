@@ -10,13 +10,16 @@ export default function LeadForm() {
     telefone: '',
     cidade: '',
     area_m2: '',
+    endereco: '',
+    numero: '',
+    tipo_servico: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -33,10 +36,13 @@ export default function LeadForm() {
         telefone: formData.telefone,
         cidade: formData.cidade,
         area_m2: formData.area_m2 ? parseFloat(formData.area_m2) : null,
+        endereco_obra: formData.endereco ? `${formData.endereco}${formData.numero ? `, ${formData.numero}` : ''}` : null,
+        numero: formData.numero || null,
+        tipo_servico: formData.tipo_servico || null,
       });
 
       setSuccess(true);
-      setFormData({ nome: '', email: '', telefone: '', cidade: '', area_m2: '' });
+      setFormData({ nome: '', email: '', telefone: '', cidade: '', area_m2: '', endereco: '', numero: '', tipo_servico: '' });
     } catch (err: any) {
       console.error('Falha ao enviar lead:', err);
       setError(err.message || 'Ocorreu um erro ao enviar seus dados. Tente novamente.');
@@ -149,6 +155,62 @@ export default function LeadForm() {
             placeholder="Ex: 120"
             className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-lg px-4 py-3 text-slate-200 placeholder-slate-650 outline-none transition-all text-sm"
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+        <div className="space-y-1.5 sm:col-span-8">
+          <label htmlFor="endereco" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Endereço (Rua, Avenida)
+          </label>
+          <input
+            type="text"
+            id="endereco"
+            name="endereco"
+            value={formData.endereco}
+            onChange={handleChange}
+            placeholder="Ex: Av. Sete de Setembro"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-lg px-4 py-3 text-slate-200 placeholder-slate-650 outline-none transition-all text-sm"
+          />
+        </div>
+        <div className="space-y-1.5 sm:col-span-4">
+          <label htmlFor="numero" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Número
+          </label>
+          <input
+            type="text"
+            id="numero"
+            name="numero"
+            value={formData.numero}
+            onChange={handleChange}
+            placeholder="Ex: 405"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-lg px-4 py-3 text-slate-200 placeholder-slate-650 outline-none transition-all text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="tipo_servico" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Tipo de Serviço
+        </label>
+        <div className="relative">
+          <select
+            id="tipo_servico"
+            name="tipo_servico"
+            value={formData.tipo_servico}
+            onChange={handleChange}
+            required
+            className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-lg px-4 py-3 text-slate-200 outline-none transition-all text-sm appearance-none cursor-pointer"
+          >
+            <option value="" disabled>Selecione o serviço desejado</option>
+            <option value="Instalação Sistemas Solares">Instalação Sistemas Solares</option>
+            <option value="Limpeza de placas Solares">Limpeza de placas Solares</option>
+            <option value="Aquecimento de piso">Aquecimento de piso</option>
+            <option value="Carregamento Veicular">Carregamento Veicular</option>
+          </select>
+          <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </div>
 
