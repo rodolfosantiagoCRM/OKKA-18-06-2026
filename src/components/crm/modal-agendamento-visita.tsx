@@ -366,11 +366,17 @@ export default function ModalAgendamentoVisita({
     setIsActionPending(true);
     try {
       const res = await deletarTipoServico(serviceName);
+      if (!res.success) {
+        alert(res.error || 'Erro ao excluir o tipo de serviço.');
+        return;
+      }
       const remaining = tipoServicoOptions.filter((s) => s !== serviceName);
       setTipoServicoOptions(remaining);
       setTipoServicoClienteNovo(remaining.length > 0 ? remaining[0] : '');
+      setMateriaisPrevistos([]);
     } catch (err) {
       console.error(err);
+      alert('Erro inesperado ao excluir o tipo de serviço.');
     } finally {
       setIsActionPending(false);
     }

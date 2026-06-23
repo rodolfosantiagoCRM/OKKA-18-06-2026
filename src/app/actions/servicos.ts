@@ -22,7 +22,7 @@ export async function getTiposServico(): Promise<string[]> {
       return FALLBACK_SERVICES;
     }
 
-    if (!data || data.length === 0) {
+    if (!data) {
       return FALLBACK_SERVICES;
     }
 
