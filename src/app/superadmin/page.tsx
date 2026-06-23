@@ -8,7 +8,8 @@ import {
   alterarStatusAssinatura,
   atualizarEmpresa,
   alternarBloqueioEmpresa,
-  salvarFaturamentoCustomizado
+  salvarFaturamentoCustomizado,
+  excluirEmpresa
 } from '@/actions/superadmin';
 import { supabase } from '@/lib/supabase';
 
@@ -50,6 +51,7 @@ export default function SuperAdminDashboard() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Estados de Senha (olho)
   const [showCreatePassword, setShowCreatePassword] = useState(false);
@@ -71,6 +73,32 @@ export default function SuperAdminDashboard() {
   // Form de Reset de Senha
   const [newPassword, setNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Exclusão de Empresa
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteCompany = async () => {
+    if (!selectedEmpresa) return;
+    setDeleteLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await excluirEmpresa(selectedEmpresa.id);
+      if (res.success) {
+        setSuccessMsg(`Empresa "${selectedEmpresa.nome_fantasia}" e todos os seus usuários associados foram excluídos com sucesso!`);
+        setIsDeleteModalOpen(false);
+        setSelectedEmpresa(null);
+        loadData();
+      } else {
+        setError(res.error || 'Erro ao excluir empresa.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro inesperado ao excluir empresa.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   // Form de Edição de Empresa
   const [editCompanyForm, setEditCompanyForm] = useState({
@@ -701,6 +729,18 @@ export default function SuperAdminDashboard() {
                         >
                           Resetar Senha
                         </button>
+
+                        <button
+                          onClick={() => {
+                            setError(null);
+                            setSuccessMsg(null);
+                            setSelectedEmpresa(emp);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="bg-slate-900 border border-slate-800 hover:bg-rose-950/40 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer"
+                        >
+                          Excluir
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -1187,6 +1227,82 @@ export default function SuperAdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: EXCLUIR EMPRESA (CONFIRMAÇÃO)
+          ========================================================================= */}
+      {isDeleteModalOpen && selectedEmpresa && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-850 w-full max-w-md rounded-2xl shadow-2xl relative overflow-hidden animate-slide-up">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-600/5 rounded-bl-full pointer-events-none" />
+            
+            <div className="p-6 border-b border-slate-850 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-rose-500 flex items-center gap-2">
+                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Confirmar Exclusão
+                </h3>
+                <p className="text-slate-400 text-xs mt-0.5">Esta ação é irreversível e apagará todos os dados.</p>
+              </div>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-100 p-1 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex items-start gap-2.5 text-xs font-semibold animate-fade-in">
+                  <svg className="w-4 h-4 shrink-0 mt-0.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>{error}</div>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Você tem certeza que deseja excluir permanentemente a empresa <strong className="text-white">"{selectedEmpresa.nome_fantasia}"</strong> (CNPJ: {selectedEmpresa.cnpj})?
+              </p>
+              
+              <div className="bg-rose-500/5 border border-rose-500/10 p-4 rounded-xl space-y-2">
+                <div className="text-[11px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Aviso Importante
+                </div>
+                <ul className="list-disc list-inside text-[11px] text-slate-400 space-y-1">
+                  <li>Todas as contas de acesso (Mestre, instaladores, vendedores) vinculadas a esta empresa serão **removidas definitivamente**.</li>
+                  <li>Todos os leads, projetos cadastrados, históricos de faturamento e agendamentos serão **excluídos de forma irrecuperável**.</li>
+                </ul>
+              </div>
+
+              <div className="pt-4 border-t border-slate-850 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="bg-transparent hover:bg-slate-850 text-slate-400 hover:text-slate-100 py-2 px-4 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteCompany}
+                  disabled={deleteLoading}
+                  className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-550 text-white py-2 px-5 rounded-xl text-xs font-semibold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {deleteLoading ? 'Excluindo...' : 'Confirmar Exclusão'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

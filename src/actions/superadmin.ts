@@ -422,4 +422,59 @@ export async function salvarFaturamentoCustomizado(
   }
 }
 
+/**
+ * Exclui permanentemente uma empresa, todos os seus dados e todas as contas de usuários associadas.
+ */
+export async function excluirEmpresa(empresaId: string) {
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return { success: false, error: 'Chave SUPABASE_SERVICE_ROLE_KEY ausente.' };
+    }
+
+    const supabaseAdmin = createServerClient();
+    await checkSuperAdminPermission(supabaseAdmin);
+
+    // 1. Buscar todos os usuários vinculados a esta empresa
+    const { data: perfis, error: perfisError } = await supabaseAdmin
+      .from('perfis_usuarios')
+      .select('id, email')
+      .eq('empresa_id', empresaId);
+
+    if (perfisError) {
+      console.error('Erro ao buscar usuários da empresa para exclusão:', perfisError);
+      return { success: false, error: 'Erro ao buscar usuários associados para exclusão.' };
+    }
+
+    // 2. Deletar cada usuário do Supabase Auth (isso vai deletar os perfis por cascade)
+    if (perfis && perfis.length > 0) {
+      for (const perfil of perfis) {
+        console.log(`[SuperAdmin Excluir] Removendo usuário Auth: ${perfil.email} (${perfil.id})`);
+        const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(perfil.id);
+        if (authDeleteError) {
+          console.error(`Erro ao deletar usuário ${perfil.email} no Auth:`, authDeleteError);
+          // Continuamos tentando deletar os outros mesmo se um falhar
+        }
+      }
+    }
+
+    // 3. Deletar a empresa (isso deleta leads, projetos, visitas, etc. por cascade)
+    const { error: empresaDeleteError } = await supabaseAdmin
+      .from('empresas')
+      .delete()
+      .eq('id', empresaId);
+
+    if (empresaDeleteError) {
+      console.error('Erro ao deletar empresa do banco:', empresaDeleteError);
+      return { success: false, error: `Erro ao deletar empresa do banco: ${empresaDeleteError.message}` };
+    }
+
+    console.log(`[SuperAdmin Excluir] Empresa ${empresaId} excluída com sucesso.`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Erro no excluirEmpresa:', err);
+    return { success: false, error: err.message || 'Erro inesperado ao excluir empresa.' };
+  }
+}
+
+
 
