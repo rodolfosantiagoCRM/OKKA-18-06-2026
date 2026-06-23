@@ -503,11 +503,14 @@ export default function LeadsDashboard() {
                                     {!lead.materiais_previstos || lead.materiais_previstos.length === 0 ? (
                                       <span className="text-gray-400 italic">Nenhum material planejado</span>
                                     ) : (
-                                      lead.materiais_previstos.map((mat, i) => (
-                                        <span key={i} className="inline-block bg-orange-100 border border-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                                          {mat}
-                                        </span>
-                                      ))
+                                      lead.materiais_previstos.map((mat: any, i) => {
+                                        const displayVal = typeof mat === 'string' ? mat : `${mat.nome || ''} (${mat.quantidade || 1})`;
+                                        return (
+                                          <span key={i} className="inline-block bg-orange-100 border border-orange-200 text-orange-800 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                            {displayVal}
+                                          </span>
+                                        );
+                                      })
                                     )}
                                   </div>
                                 </div>

@@ -464,7 +464,7 @@ export default function DashboardVisitas() {
       complemento: string;
       bairro: string;
       tipo_servico: string;
-      materiais_previstos: string[];
+      materiais_previstos: any[];
       observacoes_projeto: string;
     } | null,
     project_id?: string

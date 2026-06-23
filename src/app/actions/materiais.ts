@@ -24,16 +24,24 @@ const FALLBACK_MATERIALS: MaterialPredefinido[] = [
  * Busca todos os materiais pré-definidos do banco.
  * Caso a tabela não exista (migração pendente), retorna o fallback estático.
  */
-export async function getMateriaisPredefinidos(): Promise<MaterialPredefinido[]> {
+export async function getMateriaisPredefinidos(tipoServico?: string): Promise<MaterialPredefinido[]> {
   try {
     const supabase = createServerClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('materiais_predefinidos')
-      .select('*')
-      .order('nome', { ascending: true });
+      .select('*');
+
+    if (tipoServico) {
+      query = query.or(`tipo_servico.eq."${tipoServico}",tipo_servico.is.null`);
+    }
+
+    const { data, error } = await query.order('nome', { ascending: true });
 
     if (error) {
       console.warn('Erro ao carregar materiais do banco, usando fallback:', error.message);
+      if (tipoServico && tipoServico !== 'Aquecimento de piso') {
+        return [];
+      }
       return FALLBACK_MATERIALS;
     }
 
@@ -47,7 +55,7 @@ export async function getMateriaisPredefinidos(): Promise<MaterialPredefinido[]>
 /**
  * Adiciona um novo material pré-definido no banco.
  */
-export async function criarMaterialPredefinido(nome: string): Promise<{ success: boolean; data?: MaterialPredefinido; error?: string }> {
+export async function criarMaterialPredefinido(nome: string, tipoServico?: string): Promise<{ success: boolean; data?: MaterialPredefinido; error?: string }> {
   try {
     if (!nome || !nome.trim()) {
       return { success: false, error: 'O nome do material é obrigatório.' };
@@ -55,7 +63,7 @@ export async function criarMaterialPredefinido(nome: string): Promise<{ success:
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from('materiais_predefinidos')
-      .insert([{ nome: nome.trim() }])
+      .insert([{ nome: nome.trim(), tipo_servico: tipoServico || null }])
       .select()
       .single();
 

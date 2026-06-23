@@ -54,7 +54,11 @@ function jsonToCsv(headers: string[], rows: any[][]): string {
         .map(val => {
           if (val === null || val === undefined) return '""';
           if (Array.isArray(val)) {
-            const arrStr = val.join('; ');
+            const arrStr = val.map(item => 
+              typeof item === 'string' 
+                ? item 
+                : `${item.nome || ''} (${item.quantidade || 1})`
+            ).join('; ');
             return `"${arrStr.replace(/"/g, '""')}"`;
           }
           const str = String(val);

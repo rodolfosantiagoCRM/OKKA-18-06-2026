@@ -13,7 +13,7 @@ export const leadsService = {
     area_m2: number | null;
     endereco_obra?: string | null;
     valor_estimado?: number | null;
-    materiais_previstos?: string[] | null;
+    materiais_previstos?: any[] | null;
     observacoes?: string | null;
     status?: Lead['status'];
     cep?: string | null;

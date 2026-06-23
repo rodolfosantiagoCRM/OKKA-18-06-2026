@@ -9,6 +9,27 @@ import {
   deletarMaterialPredefinido,
   type MaterialPredefinido
 } from '@/app/actions/materiais';
+import { getTiposServico, criarTipoServico } from '@/app/actions/servicos';
+
+const parseMateriaisPrevistos = (raw: any): Array<{ nome: string, quantidade: number }> => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((item) => {
+      if (typeof item === 'string') {
+        const match = item.match(/(.+)\s*\((\d+)\)$/);
+        if (match) {
+          return { nome: match[1].trim(), quantidade: parseInt(match[2]) || 1 };
+        }
+        return { nome: item.trim(), quantidade: 1 };
+      }
+      if (item && typeof item === 'object' && 'nome' in item) {
+        return { nome: item.nome, quantidade: item.quantidade || 1 };
+      }
+      return { nome: String(item), quantidade: 1 };
+    });
+  }
+  return [];
+};
 
 interface ModalCadastroLeadProps {
   isOpen: boolean;
@@ -21,7 +42,7 @@ interface ModalCadastroLeadProps {
     area_m2: number | null;
     endereco_obra?: string | null;
     valor_estimado?: number | null;
-    materiais_previstos?: string[] | null;
+    materiais_previstos?: any[] | null;
     observacoes?: string | null;
     status: Lead['status'];
     cep?: string | null;
@@ -129,11 +150,16 @@ export default function ModalCadastroLead({
   const [complementoObra, setComplementoObra] = useState('');
   const [bairroObra, setBairroObra] = useState('');
   const [valorEstimado, setValorEstimado] = useState('15000');
-  const [materiaisPrevistos, setMateriaisPrevistos] = useState<string[]>([]);
+  const [materiaisPrevistos, setMateriaisPrevistos] = useState<Array<{ nome: string, quantidade: number }>>([]);
   const [observacoes, setObservacoes] = useState('');
   const [cep, setCep] = useState('');
   const [tipoServico, setTipoServico] = useState('');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+
+  // Tipos de Serviço Dinâmicos
+  const [tipoServicoOptions, setTipoServicoOptions] = useState<string[]>([]);
+  const [isAddingNewService, setIsAddingNewService] = useState(false);
+  const [newServiceName, setNewServiceName] = useState('');
 
   // Estados de Materiais Dinâmicos
   const [materialOptions, setMaterialOptions] = useState<MaterialPredefinido[]>([]);
@@ -162,7 +188,7 @@ export default function ModalCadastroLead({
         setComplementoObra(parsed.complemento);
         setBairroObra(parsed.bairro);
         setValorEstimado(leadToEdit.valor_estimado ? String(leadToEdit.valor_estimado) : '');
-        setMateriaisPrevistos(leadToEdit.materiais_previstos || []);
+        setMateriaisPrevistos(parseMateriaisPrevistos(leadToEdit.materiais_previstos));
         setObservacoes(leadToEdit.observacoes || '');
         setCep(leadToEdit.cep || '');
         setTipoServico(leadToEdit.tipo_servico || '');
@@ -226,12 +252,30 @@ export default function ModalCadastroLead({
     }
   };
 
-  // Carregar materiais na abertura do modal
+  // Carregar tipos de serviço na abertura do modal
+  useEffect(() => {
+    async function loadServices() {
+      try {
+        const list = await getTiposServico();
+        setTipoServicoOptions(list);
+        if (list.length > 0 && !tipoServico && !leadToEdit) {
+          setTipoServico(list[0]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar tipos de serviço:', err);
+      }
+    }
+    if (isOpen) {
+      loadServices();
+    }
+  }, [isOpen, leadToEdit]);
+
+  // Carregar materiais na abertura do modal ou quando mudar o tipo de serviço
   useEffect(() => {
     async function loadMaterials() {
       setIsLoadingMaterials(true);
       try {
-        const list = await getMateriaisPredefinidos();
+        const list = await getMateriaisPredefinidos(tipoServico || undefined);
         setMaterialOptions(list);
       } catch (e) {
         console.error('Erro ao carregar materiais:', e);
@@ -242,15 +286,24 @@ export default function ModalCadastroLead({
     if (isOpen) {
       loadMaterials();
     }
-  }, [isOpen]);
+  }, [isOpen, tipoServico]);
 
   if (!isOpen) return null;
 
   const handleToggleMaterial = (materialName: string) => {
+    setMateriaisPrevistos((prev) => {
+      const exists = prev.some((m) => m.nome === materialName);
+      if (exists) {
+        return prev.filter((m) => m.nome !== materialName);
+      } else {
+        return [...prev, { nome: materialName, quantidade: 1 }];
+      }
+    });
+  };
+
+  const handleQuantityChange = (materialName: string, qty: number) => {
     setMateriaisPrevistos((prev) =>
-      prev.includes(materialName)
-        ? prev.filter((m) => m !== materialName)
-        : [...prev, materialName]
+      prev.map((m) => (m.nome === materialName ? { ...m, quantidade: Math.max(1, qty) } : m))
     );
   };
 
@@ -259,7 +312,7 @@ export default function ModalCadastroLead({
     if (!newMaterialName.trim()) return;
     setIsActionPending(true);
     try {
-      const res = await criarMaterialPredefinido(newMaterialName.trim());
+      const res = await criarMaterialPredefinido(newMaterialName.trim(), tipoServico || undefined);
       if (res.success && res.data) {
         setMaterialOptions((prev) => [...prev, res.data!]);
       } else {
@@ -291,7 +344,7 @@ export default function ModalCadastroLead({
         // Atualiza a seleção do lead caso o material editado já estivesse selecionado
         if (oldMaterial) {
           setMateriaisPrevistos((prev) =>
-            prev.map((m) => (m === oldMaterial.nome ? editingMaterialName.trim() : m))
+            prev.map((m) => (m.nome === oldMaterial.nome ? { ...m, nome: editingMaterialName.trim() } : m))
           );
         }
         setEditingMaterialId(null);
@@ -310,10 +363,32 @@ export default function ModalCadastroLead({
       if (res.success || id.startsWith('local-')) {
         const oldMaterial = materialOptions.find((m) => m.id === id);
         if (oldMaterial) {
-          setMateriaisPrevistos((prev) => prev.filter((m) => m !== oldMaterial.nome));
+          setMateriaisPrevistos((prev) => prev.filter((m) => m.nome !== oldMaterial.nome));
         }
         setMaterialOptions((prev) => prev.filter((m) => m.id !== id));
       }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
+
+  const handleCreateNewService = async () => {
+    if (!newServiceName.trim()) return;
+    setIsActionPending(true);
+    try {
+      const res = await criarTipoServico(newServiceName.trim());
+      if (res.success && res.data) {
+        setTipoServicoOptions((prev) => [...prev, res.data!].sort());
+        setTipoServico(res.data);
+      } else {
+        const name = newServiceName.trim();
+        setTipoServicoOptions((prev) => [...prev, name].sort());
+        setTipoServico(name);
+      }
+      setNewServiceName('');
+      setIsAddingNewService(false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -592,24 +667,67 @@ export default function ModalCadastroLead({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="tipo_servico" className={labelClass}>Tipo de Serviço</label>
-                    <div className="relative">
-                      <select
-                        id="tipo_servico"
-                        value={tipoServico}
-                        onChange={(e) => setTipoServico(e.target.value)}
-                        className={selectClass}
-                      >
-                        <option value="" disabled>Selecione um serviço</option>
-                        <option value="Instalação Sistemas Solares">Instalação Sistemas Solares</option>
-                        <option value="Limpeza de placas Solares">Limpeza de placas Solares</option>
-                        <option value="Aquecimento de piso">Aquecimento de piso</option>
-                        <option value="Carregamento Veicular">Carregamento Veicular</option>
-                      </select>
-                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
+                    <div className="flex justify-between items-center">
+                      <label htmlFor="tipo_servico" className={labelClass}>Tipo de Serviço</label>
+                      {!isAddingNewService ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingNewService(true)}
+                          className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 transition-colors cursor-pointer"
+                        >
+                          + Novo Serviço
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setIsAddingNewService(false); setNewServiceName(''); }}
+                          className="text-[10px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 transition-colors cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      )}
                     </div>
+                    
+                    {!isAddingNewService ? (
+                      <div className="relative">
+                        <select
+                          id="tipo_servico"
+                          value={tipoServico}
+                          onChange={(e) => {
+                            setTipoServico(e.target.value);
+                            setMateriaisPrevistos([]);
+                          }}
+                          className={selectClass}
+                        >
+                          <option value="" disabled>Selecione um serviço</option>
+                          {tipoServicoOptions.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nome do novo serviço"
+                          value={newServiceName}
+                          onChange={(e) => setNewServiceName(e.target.value)}
+                          className={inputClass}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateNewService}
+                          disabled={isActionPending || !newServiceName.trim()}
+                          className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs shrink-0 transition-colors cursor-pointer"
+                        >
+                          Adicionar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -757,44 +875,62 @@ export default function ModalCadastroLead({
                     </div>
                   </div>
                 ) : (
-                  // MODO SELECAO NORMAL DE MATERIAIS
-                  <div className="space-y-2">
-                    <label className={labelClass}>Selecione os Materiais Necessários (Previsão)</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                      {isLoadingMaterials ? (
-                        <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Carregando materiais...</p>
-                      ) : materialOptions.length === 0 ? (
-                        <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Nenhum material pré-definido. Clique em [Configurar Lista] para adicionar.</p>
-                      ) : (
-                        materialOptions.map((mat) => {
-                          const selected = materiaisPrevistos.includes(mat.nome);
-                          return (
-                            <button
-                              key={mat.id}
-                              type="button"
-                              onClick={() => handleToggleMaterial(mat.nome)}
-                              className={`flex items-center gap-2.5 px-3 py-2.5 border rounded-xl text-left text-xs font-bold transition-all duration-200 cursor-pointer ${
-                                selected
-                                  ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-sm shadow-orange-500/5'
-                                  : 'bg-white border-gray-200/80 text-gray-600 hover:border-orange-200 hover:bg-orange-50/10'
-                              }`}
-                            >
-                              <div className={`w-4.5 h-4.5 rounded-lg border flex items-center justify-center shrink-0 transition-all ${
-                                selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 bg-white'
-                              }`}>
-                                {selected && (
-                                  <svg className="w-3 h-3 font-bold text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="truncate">{mat.nome}</span>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
+                      // MODO SELECAO NORMAL DE MATERIAIS
+                      <div className="space-y-2">
+                        <label className={labelClass}>Selecione os Materiais Necessários (Previsão)</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          {isLoadingMaterials ? (
+                            <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Carregando materiais...</p>
+                          ) : materialOptions.length === 0 ? (
+                            <p className="col-span-full text-xs text-gray-400 italic text-center py-4">Nenhum material pré-definido. Clique em [Configurar Lista] para adicionar.</p>
+                          ) : (
+                            materialOptions.map((mat) => {
+                              const selected = materiaisPrevistos.some((m) => m.nome === mat.nome);
+                              const currentQty = materiaisPrevistos.find((m) => m.nome === mat.nome)?.quantidade || 1;
+                              return (
+                                <div
+                                  key={mat.id}
+                                  className={`flex items-center justify-between p-2.5 border rounded-xl transition-all duration-200 ${
+                                    selected
+                                      ? 'bg-orange-50/50 border-orange-300 text-orange-700 shadow-sm'
+                                      : 'bg-white border-gray-200 text-gray-600 hover:border-orange-200'
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleMaterial(mat.nome)}
+                                    className="flex items-center gap-2 text-left text-xs font-bold truncate flex-1 cursor-pointer select-none"
+                                  >
+                                    <div className={`w-4.5 h-4.5 rounded-lg border flex items-center justify-center shrink-0 transition-all ${
+                                      selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 bg-white'
+                                    }`}>
+                                      {selected && (
+                                        <svg className="w-3 h-3 font-bold text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span className="truncate">{mat.nome}</span>
+                                  </button>
+                                  
+                                  {selected && (
+                                    <div className="flex items-center gap-1 shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={currentQty}
+                                        onChange={(e) => handleQuantityChange(mat.nome, parseInt(e.target.value) || 1)}
+                                        className="w-12 text-center text-xs font-bold font-mono bg-white border border-orange-200 text-orange-800 rounded-lg py-1 focus:ring-1 focus:ring-orange-300 outline-none"
+                                      />
+                                      <span className="text-[10px] text-orange-400 font-bold uppercase">un</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
                 )}
 
                 {/* Campo de Observações */}

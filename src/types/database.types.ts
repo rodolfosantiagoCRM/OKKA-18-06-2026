@@ -16,7 +16,7 @@ export interface Lead {
   criado_em: string;
   endereco_obra?: string | null;
   valor_estimado?: number | null;
-  materiais_previstos?: string[] | null;
+  materiais_previstos?: any[] | null;
   observacoes?: string | null;
   cep?: string | null;
   numero?: string | null;
