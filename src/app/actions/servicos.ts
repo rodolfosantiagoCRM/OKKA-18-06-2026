@@ -56,3 +56,38 @@ export async function criarTipoServico(nome: string): Promise<{ success: boolean
     return { success: false, error: (err as Error).message || 'Erro inesperado ao criar tipo de serviço.' };
   }
 }
+
+export async function deletarTipoServico(nome: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!nome || !nome.trim()) {
+      return { success: false, error: 'O nome do serviço é obrigatório.' };
+    }
+    const supabase = createServerClient();
+    
+    // 1. Deletar da tabela tipos_servico
+    const { error: errorServico } = await supabase
+      .from('tipos_servico')
+      .delete()
+      .eq('nome', nome.trim());
+
+    if (errorServico) {
+      console.error('Erro ao deletar tipo de serviço:', errorServico);
+      return { success: false, error: errorServico.message || 'Erro ao deletar tipo de serviço.' };
+    }
+
+    // 2. Deletar materiais predefinidos associados a este tipo de serviço
+    const { error: errorMateriais } = await supabase
+      .from('materiais_predefinidos')
+      .delete()
+      .eq('tipo_servico', nome.trim());
+
+    if (errorMateriais) {
+      console.warn('Aviso: Erro ao deletar materiais vinculados ao serviço:', errorMateriais.message);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Erro inesperado ao deletar tipo de serviço:', err);
+    return { success: false, error: (err as Error).message || 'Erro inesperado ao deletar tipo de serviço.' };
+  }
+}

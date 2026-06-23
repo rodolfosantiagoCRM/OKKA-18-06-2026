@@ -9,7 +9,7 @@ import {
   deletarMaterialPredefinido,
   type MaterialPredefinido
 } from '@/app/actions/materiais';
-import { getTiposServico, criarTipoServico } from '@/app/actions/servicos';
+import { getTiposServico, criarTipoServico, deletarTipoServico } from '@/app/actions/servicos';
 
 const parseMateriaisPrevistos = (raw: any): Array<{ nome: string, quantidade: number }> => {
   if (!raw) return [];
@@ -396,6 +396,23 @@ export default function ModalCadastroLead({
     }
   };
 
+  const handleDeleteService = async (serviceName: string) => {
+    if (!serviceName) return;
+    if (!window.confirm(`Deseja realmente excluir o tipo de serviço "${serviceName}" e todos os seus materiais cadastrados?`)) return;
+    
+    setIsActionPending(true);
+    try {
+      const res = await deletarTipoServico(serviceName);
+      const remaining = tipoServicoOptions.filter((s) => s !== serviceName);
+      setTipoServicoOptions(remaining);
+      setTipoServico(remaining.length > 0 ? remaining[0] : '');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim()) { setErrorMessage('Por favor, informe o nome.'); return; }
@@ -670,13 +687,28 @@ export default function ModalCadastroLead({
                     <div className="flex justify-between items-center">
                       <label htmlFor="tipo_servico" className={labelClass}>Tipo de Serviço</label>
                       {!isAddingNewService ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingNewService(true)}
-                          className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 transition-colors cursor-pointer"
-                        >
-                          + Novo Serviço
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {tipoServico && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteService(tipoServico)}
+                              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 transition-colors cursor-pointer flex items-center gap-0.5"
+                              title="Excluir Serviço Atual"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Excluir
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setIsAddingNewService(true)}
+                            className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 transition-colors cursor-pointer"
+                          >
+                            + Novo Serviço
+                          </button>
+                        </div>
                       ) : (
                         <button
                           type="button"
