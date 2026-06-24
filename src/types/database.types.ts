@@ -53,6 +53,7 @@ export interface Visita {
   whatsapp_log?: string | null;
   pdf_proposta_url?: string | null;
   agendado_por?: string | null;
+  realizada_com_atraso?: boolean;
 }
 
 export interface ResponsavelTecnico {

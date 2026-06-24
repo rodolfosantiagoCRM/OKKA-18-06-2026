@@ -110,9 +110,17 @@ export async function getTecnicosEficiencia(): Promise<RelatorioEficiencia> {
     const tecnicos = dbTecnicos as ResponsavelTecnico[];
     const visits = dbVisits as Visita[];
 
-    // Se não há dados cadastrados, retornar fallback mockado estruturado
+    // Se não há dados cadastrados, retornar estrutura zerada funcional
     if (tecnicos.length === 0) {
-      return getMockFallbackRelatorio(hojeStr, seteDiasAtrasStr);
+      return {
+        hojeStr,
+        seteDiasAtrasStr,
+        globalTotal: 0,
+        globalConcluidas: 0,
+        globalAtrasadas: 0,
+        globalTaxaConclusao: 0,
+        desempenho: [],
+      };
     }
 
     // 3. Agregação por técnico
@@ -120,8 +128,9 @@ export async function getTecnicosEficiencia(): Promise<RelatorioEficiencia> {
       const visitasTecnico = visits.filter((v) => v.tecnico_id === tec.id);
       const totalVisitas = visitasTecnico.length;
       const totalConcluidas = visitasTecnico.filter((v) => v.status_visita === 'Realizada').length;
+      // Conta como atrasada se está agendada e no passado OR se foi realizada com atraso
       const totalAtrasadas = visitasTecnico.filter(
-        (v) => v.data_visita < hojeStr && v.status_visita === 'Agendada'
+        (v) => (v.data_visita < hojeStr && v.status_visita === 'Agendada') || v.realizada_com_atraso
       ).length;
 
       const taxaConclusao = totalVisitas > 0 ? Math.round((totalConcluidas / totalVisitas) * 100) : 0;
@@ -142,7 +151,7 @@ export async function getTecnicosEficiencia(): Promise<RelatorioEficiencia> {
     const globalTotal = visits.length;
     const globalConcluidas = visits.filter((v) => v.status_visita === 'Realizada').length;
     const globalAtrasadas = visits.filter(
-      (v) => v.data_visita < hojeStr && v.status_visita === 'Agendada'
+      (v) => (v.data_visita < hojeStr && v.status_visita === 'Agendada') || v.realizada_com_atraso
     ).length;
     const globalTaxaConclusao = globalTotal > 0 ? Math.round((globalConcluidas / globalTotal) * 100) : 0;
 
@@ -156,8 +165,16 @@ export async function getTecnicosEficiencia(): Promise<RelatorioEficiencia> {
       desempenho,
     };
   } catch (error) {
-    console.warn('Erro ao acessar base do Supabase no relatório de eficiência. Retornando fallback mockado.', error);
-    return getMockFallbackRelatorio(hojeStr, seteDiasAtrasStr);
+    console.error('Erro ao acessar base do Supabase no relatório de eficiência:', error);
+    return {
+      hojeStr,
+      seteDiasAtrasStr,
+      globalTotal: 0,
+      globalConcluidas: 0,
+      globalAtrasadas: 0,
+      globalTaxaConclusao: 0,
+      desempenho: [],
+    };
   }
 }
 
