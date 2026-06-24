@@ -10,7 +10,17 @@ export const projectsService = {
     endereco: string;
     valor_total: number;
     status_projeto?: 'Orçamento' | 'Instalação' | 'Concluído';
+    empresa_id?: string | null;
   }): Promise<Project> {
+    // Tentar inferir o empresa_id da sessão ativa do usuário logado
+    let empresaId = project.empresa_id;
+    if (!empresaId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.user_metadata?.empresa_id) {
+        empresaId = session.user.user_metadata.empresa_id;
+      }
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .insert([
@@ -19,6 +29,7 @@ export const projectsService = {
           endereco: project.endereco,
           valor_total: project.valor_total,
           status_projeto: project.status_projeto || 'Orçamento',
+          ...(empresaId && { empresa_id: empresaId }),
         },
       ])
       .select()

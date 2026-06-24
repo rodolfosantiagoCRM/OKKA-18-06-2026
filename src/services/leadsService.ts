@@ -19,7 +19,17 @@ export const leadsService = {
     cep?: string | null;
     numero?: string | null;
     tipo_servico?: string | null;
+    empresa_id?: string | null;
   }): Promise<Lead> {
+    // Tentar inferir o empresa_id da sessão ativa do usuário logado
+    let empresaId = lead.empresa_id;
+    if (!empresaId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.user_metadata?.empresa_id) {
+        empresaId = session.user.user_metadata.empresa_id;
+      }
+    }
+
     const { data, error } = await supabase
       .from('leads')
       .insert([
@@ -37,6 +47,7 @@ export const leadsService = {
           cep: lead.cep || null,
           numero: lead.numero || null,
           tipo_servico: lead.tipo_servico || null,
+          ...(empresaId && { empresa_id: empresaId }),
         },
       ])
       .select()

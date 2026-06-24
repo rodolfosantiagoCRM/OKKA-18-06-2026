@@ -58,7 +58,17 @@ export const visitasService = {
     tecnico_id?: string | null;
     pdf_proposta_url?: string | null;
     agendado_por?: string | null;
+    empresa_id?: string | null;
   }): Promise<Visita> {
+    // Tentar inferir o empresa_id da sessão ativa do usuário logado
+    let empresaId = visita.empresa_id;
+    if (!empresaId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.user_metadata?.empresa_id) {
+        empresaId = session.user.user_metadata.empresa_id;
+      }
+    }
+
     const { data, error } = await supabase
       .from('visits')
       .insert([
@@ -73,6 +83,7 @@ export const visitasService = {
           tecnico_id: visita.tecnico_id || null,
           pdf_proposta_url: visita.pdf_proposta_url || null,
           agendado_por: visita.agendado_por || null,
+          ...(empresaId && { empresa_id: empresaId }),
         },
       ])
       .select('*, projects(*, leads(*)), responsaveis_tecnicos(*), empresas(*)')
